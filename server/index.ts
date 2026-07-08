@@ -77,6 +77,16 @@ const distIndex = join(distDir, 'index.html');
 const hasDist = existsSync(distIndex);
 
 if (hasDist) {
+  app.use('/assets/*', async (c, next) => {
+    await next();
+    c.header('Cache-Control', 'public, max-age=31536000, immutable');
+  });
+  app.use('/*', async (c, next) => {
+    await next();
+    if (c.res.headers.get('Content-Type')?.includes('text/html')) {
+      c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  });
   app.use('/*', serveStatic({ root: 'dist' }));
   app.get('/*', serveStatic({ path: 'dist/index.html' }));
 }
