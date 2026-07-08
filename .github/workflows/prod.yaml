@@ -14,19 +14,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  publish:
     environment: production
-    runs-on: [self-hosted, k3s, deployer, kasperrt-ShotTimer]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: .build/scripts/build-image.sh
+      - name: Create image tag
+        id: image
+        run: |
+          branch="${GITHUB_REF_NAME//\//-}"
+          echo "tag=${branch}-$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/kasperrt/shottimer:${{ steps.image.outputs.tag }}
+          build-args: |
+            VITE_HOST=https://shot.etys.no
+            VITE_CORS=https://shot.etys.no
         env:
           VITE_HOST: https://shot.etys.no
           VITE_CORS: https://shot.etys.no
-      - run: .build/scripts/push-image.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: .build/scripts/deploy.sh
-        env:
-          NAMESPACE: shottimer
-          DEPLOYMENT: shottimer
