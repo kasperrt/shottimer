@@ -23,7 +23,7 @@ overrides:
 packageExtensionsChecksum: sha256-S3esfFdrqu5PIahW8OpuF4KAbYqWKDEh56gMXvVLjcw=
 
 patchedDependencies:
-  '@generouted/solid-router@1.20.2': 65528f2098a2c665effa60ff4d5c47bfbcad42ee37ddded279faa1c37c8535ac
+  '@generouted/solid-router@1.20.2': 0bd2b339d2cd330c470e14bdd05183e367845d6b68cd81fe7e8638541e54020d
 
 importers:
 
@@ -31,7 +31,7 @@ importers:
     dependencies:
       '@generouted/solid-router':
         specifier: 1.20.2
-        version: 1.20.2(patch_hash=65528f2098a2c665effa60ff4d5c47bfbcad42ee37ddded279faa1c37c8535ac)(@solidjs/router@0.16.1(solid-js@1.9.12))(solid-js@1.9.12)(vite@8.0.16(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))
+        version: 1.20.2(patch_hash=0bd2b339d2cd330c470e14bdd05183e367845d6b68cd81fe7e8638541e54020d)(@solidjs/router@0.16.1(solid-js@1.9.12))(solid-js@1.9.12)(vite@8.0.16(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))
       '@hono/node-server':
         specifier: 2.0.11
         version: 2.0.11(hono@4.13.7)
@@ -2180,7 +2180,7 @@ snapshots:
 
   '@exodus/bytes@1.15.0': {}
 
-  '@generouted/solid-router@1.20.2(patch_hash=65528f2098a2c665effa60ff4d5c47bfbcad42ee37ddded279faa1c37c8535ac)(@solidjs/router@0.16.1(solid-js@1.9.12))(solid-js@1.9.12)(vite@8.0.16(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))':
+  '@generouted/solid-router@1.20.2(patch_hash=0bd2b339d2cd330c470e14bdd05183e367845d6b68cd81fe7e8638541e54020d)(@solidjs/router@0.16.1(solid-js@1.9.12))(solid-js@1.9.12)(vite@8.0.16(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))':
     dependencies:
       '@solidjs/router': 0.16.1(solid-js@1.9.12)
       generouted: 1.20.2(vite@8.0.16(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))
