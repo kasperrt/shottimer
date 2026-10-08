@@ -6,9 +6,11 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - postcss@8.5.18
-  - seroval@1.5.3
-  - undici@7.29.0
-  - hono@4.12.34
+  - seroval@1.6.3
+  - source-map-js@1.2.2
+  - shell-quote@1.11.0
+  - undici@7.29.1
+  - hono@4.13.7
 
 overrides:
   "@babel/core": "7.29.7"
@@ -16,10 +18,11 @@ overrides:
   baseline-browser-mapping: ">=2.11.0"
   browserslist: ">=4.28.7"
   diff: ">=4.0.4"
-  seroval: ">=1.5.3"
+  seroval: ">=1.6.3"
   picomatch: ">=4.0.4"
   postcss: ">=8.5.18"
-  shell-quote: ">=1.8.5"
-  undici: "7.29.0"
+  shell-quote: ">=1.11.0"
+  source-map-js: ">=1.2.2"
+  undici: "7.29.1"
   yaml: ">=2.8.3"
   vite: "8.0.16"
