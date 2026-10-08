@@ -13,6 +13,7 @@ minimumReleaseAgeExclude:
   - hono@4.13.7
 
 overrides:
+  "@generouted/solid-router>fast-glob": "-"
   "@babel/core": "7.29.7"
   "@babel/helpers": ">=7.26.10"
   baseline-browser-mapping: ">=2.11.0"
@@ -26,3 +27,11 @@ overrides:
   undici: "7.29.1"
   yaml: ">=2.8.3"
   vite: "8.0.16"
+
+packageExtensions:
+  "@generouted/solid-router@1.20.2":
+    dependencies:
+      tinyglobby: "0.2.17"
+
+patchedDependencies:
+  '@generouted/solid-router@1.20.2': patches/@generouted__solid-router@1.20.2.patch

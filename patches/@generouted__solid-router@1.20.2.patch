@@ -1,0 +1,66 @@
+diff --git a/dist/plugin/chunk-E4HTHNTM.js b/dist/plugin/chunk-E4HTHNTM.js
+index 7fce419e45916cdee15629efed73823bffe2e81a..f5fd111d6fda6b12681070b19fcf7299ce4e3ccd 100644
+--- a/dist/plugin/chunk-E4HTHNTM.js
++++ b/dist/plugin/chunk-E4HTHNTM.js
+@@ -10,7 +10,7 @@ import { createLogger } from "vite";
+
+ // ../../shared/core/src/index.ts
+ var patterns = {
+-  route: [/^.*\/src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
++  route: [/^(?:.*\/)?src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
+   splat: [/\[\.{3}\w+\]/g, "*"],
+   param: [/\[([^\]]+)\]/g, ":$1"],
+   slash: [/^index$|\./g, "/"],
+@@ -18,7 +18,7 @@ var patterns = {
+ };
+
+ // src/plugin/generate.ts
+-import fg from "fast-glob";
++import { glob as fg } from "tinyglobby";
+ var generateRouteTypes = async (options) => {
+   const files = await fg(options.source.routes || "./src/pages/**/[\\w[-]*.{jsx,tsx,mdx}", { onlyFiles: true });
+   const modal = await fg(options.source.modals || "./src/pages/**/[+]*.{jsx,tsx,mdx}", { onlyFiles: true });
+diff --git a/dist/plugin/generate.cjs b/dist/plugin/generate.cjs
+index 9834975e7b69dfbfaec740c51150a62f97b0d55e..8c649caa2f6d9a8b7e2934b0826b363def9e4bc2 100644
+--- a/dist/plugin/generate.cjs
++++ b/dist/plugin/generate.cjs
+@@ -40,7 +40,7 @@ var import_vite = require("vite");
+
+ // ../../shared/core/src/index.ts
+ var patterns = {
+-  route: [/^.*\/src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
++  route: [/^(?:.*\/)?src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
+   splat: [/\[\.{3}\w+\]/g, "*"],
+   param: [/\[([^\]]+)\]/g, ":$1"],
+   slash: [/^index$|\./g, "/"],
+@@ -48,7 +48,7 @@ var patterns = {
+ };
+
+ // src/plugin/generate.ts
+-var import_fast_glob = __toESM(require("fast-glob"), 1);
++var import_fast_glob = { default: require("tinyglobby").glob };
+
+ // src/plugin/template.ts
+ var template = `// Generouted, changes to this file will be overridden
+diff --git a/dist/plugin/index.cjs b/dist/plugin/index.cjs
+index 0463c6f8a32446539eefdd2c586d39f6e19cda3f..e9919113565e83d02e7c4f501b7b33c7fa352c38 100644
+--- a/dist/plugin/index.cjs
++++ b/dist/plugin/index.cjs
+@@ -43,7 +43,7 @@ var import_vite = require("vite");
+
+ // ../../shared/core/src/index.ts
+ var patterns = {
+-  route: [/^.*\/src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
++  route: [/^(?:.*\/)?src\/pages\/|^\/pages\/|\.(jsx|tsx|mdx)$/g, ""],
+   splat: [/\[\.{3}\w+\]/g, "*"],
+   param: [/\[([^\]]+)\]/g, ":$1"],
+   slash: [/^index$|\./g, "/"],
+@@ -51,7 +51,7 @@ var patterns = {
+ };
+
+ // src/plugin/generate.ts
+-var import_fast_glob = __toESM(require("fast-glob"), 1);
++var import_fast_glob = { default: require("tinyglobby").glob };
+
+ // src/plugin/template.ts
+ var template = `// Generouted, changes to this file will be overridden
