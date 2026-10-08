@@ -7,6 +7,7 @@ WORKDIR /app
 RUN npm install -g corepack@latest --force \
   && npm install -g pnpm@latest --force
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
