@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=26.0.0
+ARG NODE_VERSION=26.12.1
 
-FROM node:${NODE_VERSION}-bookworm-slim AS deps
+FROM node:${NODE_VERSION}-bookworm-slim@sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe AS deps
 WORKDIR /app
 RUN npm install -g corepack@latest --force \
   && npm install -g pnpm@latest --force
@@ -20,7 +20,7 @@ RUN pnpm build
 RUN pnpm tsc --project tsconfig.server.json --outDir distServer
 RUN pnpm prune --prod
 
-FROM node:${NODE_VERSION}-bookworm-slim AS runner
+FROM node:${NODE_VERSION}-bookworm-slim@sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe AS runner
 WORKDIR /app
 ARG VITE_HOST
 ARG VITE_CORS
