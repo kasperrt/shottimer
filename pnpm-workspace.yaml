@@ -10,7 +10,7 @@ minimumReleaseAgeExclude:
   - source-map-js@1.2.2
   - shell-quote@1.11.0
   - undici@7.29.1
-  - hono@4.13.7
+  - hono@4.13.11
 
 overrides:
   "@generouted/solid-router>fast-glob": "-"
@@ -26,7 +26,7 @@ overrides:
   source-map-js: ">=1.2.2"
   undici: "7.29.1"
   yaml: ">=2.8.3"
-  vite: "8.0.16"
+  vite: "8.1.6"
 
 packageExtensions:
   "@generouted/solid-router@1.20.2":
