@@ -34,7 +34,7 @@ importers:
         version: 1.20.2(patch_hash=0bd2b339d2cd330c470e14bdd05183e367845d6b68cd81fe7e8638541e54020d)(@solidjs/router@0.16.1(solid-js@1.9.12))(solid-js@1.9.12)(vite@8.1.6(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4))
       '@hono/node-server':
         specifier: 2.1.6
-        version: 2.1.6(hono@4.13.11)
+        version: 2.1.6(hono@4.13.16)
       '@solidjs/router':
         specifier: 0.16.1
         version: 0.16.1(solid-js@1.9.12)
@@ -42,8 +42,8 @@ importers:
         specifier: 17.4.2
         version: 17.4.2
       hono:
-        specifier: 4.13.11
-        version: 4.13.11
+        specifier: 4.13.16
+        version: 4.13.16
       nanoid:
         specifier: 5.1.16
         version: 5.1.16
@@ -1168,8 +1168,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  hono@4.13.11:
-    resolution: {integrity: sha512-/SMX/RQNJn7oNmFwH6DtwDqcrzZU2otm1FD6OJe2cWF6cfy/F8hq0XVBv7xW3FTJshRQwuBnXHDq2kNsdZnshg==}
+  hono@4.13.16:
+    resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -2190,9 +2190,9 @@ snapshots:
       tinyglobby: 0.2.17
       vite: 8.1.6(@types/node@25.5.0)(esbuild@0.28.1)(jiti@2.6.1)(tsx@4.22.4)
 
-  '@hono/node-server@2.1.6(hono@4.13.11)':
+  '@hono/node-server@2.1.6(hono@4.13.16)':
     dependencies:
-      hono: 4.13.11
+      hono: 4.13.16
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -2692,7 +2692,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  hono@4.13.11: {}
+  hono@4.13.16: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
