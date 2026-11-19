@@ -1,5 +1,5 @@
 interface Props {
-  canvas?: HTMLCanvasElement;
+  canvas: HTMLCanvasElement;
   x: number[];
   y: number[];
   drag: boolean[];
@@ -8,40 +8,21 @@ interface Props {
 }
 
 export function draw({ canvas, x, y, drag, color, full }: Props) {
-  if (!canvas) {
-    return;
-  }
   const context = canvas.getContext('2d');
-  if (!context) {
-    return;
-  }
+  if (!context || !x.length) return;
   context.strokeStyle = color;
   context.lineJoin = 'round';
+  context.lineCap = 'round';
   context.lineWidth = 5;
-
-  if (full) {
-    for (let i = 0; i < x.length; i++) {
-      context.beginPath();
-      if (drag[i] && i) {
-        context.moveTo(x[i - 1], y[i - 1]);
-      } else {
-        context.moveTo(x[i] - 1, y[i]);
-      }
-      context.lineTo(x[i], y[i]);
-      context.closePath();
-      context.stroke();
-    }
-
-    return;
-  }
-
   context.beginPath();
-  if (drag[drag.length - 1]) {
-    context.moveTo(x[drag.length - 2], y[drag.length - 2]);
-  } else {
-    context.moveTo(x[drag.length - 1] - 1, y[drag.length - 1]);
+  const first = full ? 0 : x.length - 1;
+  for (let i = first; i < x.length; i++) {
+    if (!drag[i] || i === 0) {
+      context.moveTo(x[i] - 1, y[i]);
+    } else if (i === first) {
+      context.moveTo(x[i - 1], y[i - 1]);
+    }
+    context.lineTo(x[i], y[i]);
   }
-  context.lineTo(x[drag.length - 1], y[drag.length - 1]);
-  context.closePath();
   context.stroke();
 }

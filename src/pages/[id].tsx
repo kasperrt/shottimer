@@ -1,194 +1,115 @@
-import { createSignal, onCleanup, onMount, Show } from 'solid-js';
+import { useParams } from '@solidjs/router';
+import { createSignal, Show } from 'solid-js';
 import { httpClient } from '@/lib/http';
-import { useParams } from '@/router';
 import { getRandomColor } from '@/utils/color';
 import { draw } from '@/utils/draw';
 
-export default function Id() {
-  const { id } = useParams('/:id');
-  const [name, setName] = createSignal<string>('');
-  const [submitted, setSubmitted] = createSignal(false);
-  const [submitting, setSubmitting] = createSignal(false);
-  const [showHint, setShowHint] = createSignal(true);
-  const clickX: number[] = [];
-  const clickY: number[] = [];
-  const clickDrag: boolean[] = [];
-  const color = getRandomColor();
-  let canvas: HTMLCanvasElement | undefined;
-  let canvasContainer: HTMLDivElement | undefined;
-  let painting = false;
+// Keep one coordinate system across rotation, screen densities and the host display.
+const side = 960;
 
-  const onResize = () => {
-    if (!canvas || !canvasContainer) {
-      return;
-    }
-
-    const { height, width } = canvasContainer.getBoundingClientRect();
-    canvas.height = height;
-    canvas.width = width;
-
-    draw({ canvas, x: clickX, y: clickY, drag: clickDrag, color, full: true });
+export default function JoinGame() {
+  const params = useParams<{ id: string }>();
+  const [name, setName] = createSignal('');
+  const [status, setStatus] = createSignal<'editing' | 'sending' | 'joined'>('editing');
+  const [hasInk, setHasInk] = createSignal(false);
+  const [error, setError] = createSignal('');
+  const portrait = {
+    width: side,
+    height: side,
+    x: [] as number[],
+    y: [] as number[],
+    drag: [] as boolean[],
+    color: getRandomColor(),
   };
+  let pointer: number | null = null;
 
-  const onChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    setName(target.value);
-  };
+  function mark(canvas: HTMLCanvasElement, event: PointerEvent, drag: boolean) {
+    const rect = canvas.getBoundingClientRect();
+    portrait.x.push(((event.clientX - rect.left) * side) / rect.width);
+    portrait.y.push(((event.clientY - rect.top) * side) / rect.height);
+    portrait.drag.push(drag);
+    draw({ canvas, ...portrait });
+  }
 
-  const onSubmit = async (e: Event) => {
-    e.preventDefault();
-    if (!name()) {
-      return alert('You need to define a name');
+  async function submit(event: SubmitEvent) {
+    event.preventDefault();
+    if (!name().trim() || status() !== 'editing') return;
+    setStatus('sending');
+    setError('');
+    try {
+      const [failure] = await httpClient.post(
+        '/join/{id}',
+        { id: params.id },
+        { name: name().trim(), drawing: portrait },
+      );
+      if (failure) throw failure;
+      setStatus('joined');
+    } catch {
+      setError('Couldn’t join the game. Try again.');
+      setStatus('editing');
     }
-
-    if (!canvas) {
-      return alert('Something went wrong, please reload the page and try again');
-    }
-
-    if (submitting()) {
-      return;
-    }
-
-    setSubmitting(true);
-    const [errorSubmitted] = await httpClient.post(
-      '/join/{id}',
-      { id },
-      {
-        name: name(),
-        drawing: {
-          x: clickX,
-          y: clickY,
-          drag: clickDrag,
-          color,
-          height: canvas.height,
-          width: canvas.width,
-        },
-      },
-    );
-
-    if (errorSubmitted) {
-      console.error('error submitting');
-    }
-
-    setSubmitted(!errorSubmitted);
-    setSubmitting(false);
-    if (errorSubmitted) {
-      window.alert('Something went wrong, please try again');
-    }
-  };
-
-  const onTouchStart = (e: TouchEvent) => {
-    e.preventDefault();
-    painting = true;
-    const target = e.target as HTMLCanvasElement;
-    updatePositions(e.touches[0].pageX - target.offsetLeft, e.touches[0].pageY - target.offsetTop, false);
-  };
-
-  const onTouchMove = (e: TouchEvent) => {
-    e.preventDefault();
-    if (!painting) {
-      return;
-    }
-
-    const target = e.target as HTMLCanvasElement;
-    updatePositions(e.touches[0].pageX - target.offsetLeft, e.touches[0].pageY - target.offsetTop, true);
-  };
-
-  const onMouseDown = (e: MouseEvent) => {
-    e.preventDefault();
-    painting = true;
-    const target = e.target as HTMLCanvasElement;
-    updatePositions(e.pageX - target.offsetLeft, e.pageY - target.offsetTop, false);
-  };
-
-  const onMouseMove = (e: MouseEvent) => {
-    e.preventDefault();
-    if (!painting) {
-      return;
-    }
-
-    const target = e.target as HTMLCanvasElement;
-    updatePositions(e.pageX - target.offsetLeft, e.pageY - target.offsetTop, true);
-  };
-
-  const onTouchEnd = (e: Event) => {
-    e.preventDefault();
-    painting = false;
-  };
-
-  const updatePositions = (x: number, y: number, drag: boolean) => {
-    setShowHint(false);
-    clickX.push(x);
-    clickY.push(y);
-    clickDrag.push(drag);
-    draw({ canvas, x: clickX, y: clickY, drag: clickDrag, color });
-  };
-
-  const close = () => {
-    if (!submitted()) {
-      return;
-    }
-    window.close();
-  };
-
-  onMount(() => {
-    if (!canvas || !canvasContainer) {
-      return;
-    }
-    const { height, width } = canvasContainer.getBoundingClientRect();
-    canvas.height = height;
-    canvas.width = width;
-
-    window.addEventListener('resize', onResize, { passive: true });
-    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
-    canvas.addEventListener('mousedown', onMouseDown, { passive: false });
-    canvas.addEventListener('mousemove', onMouseMove, { passive: false });
-    canvas.addEventListener('mouseup', onTouchEnd, { passive: false });
-  });
-
-  onCleanup(() => {
-    window.addEventListener('resize', onResize);
-    canvas?.removeEventListener('touchstart', onTouchStart);
-    canvas?.removeEventListener('touchmove', onTouchMove);
-    canvas?.removeEventListener('touchend', onTouchEnd);
-    canvas?.removeEventListener('mousedown', onMouseDown);
-    canvas?.removeEventListener('mousemove', onMouseMove);
-    canvas?.removeEventListener('mouseup', onTouchEnd);
-  });
+  }
 
   return (
-    <div class={'flex h-screen w-full flex-1 flex-col justify-center gap-y-2 p-2'} on:click={close}>
-      <Show when={submitted()}>
-        <h1 class="text-center text-4xl">Submitted!</h1>
-        <p class="text-center">You can now close this tab</p>
-      </Show>
-      <Show when={!submitted()}>
-        <Show when={showHint()}>
-          <h1 class="pointer-events-none absolute top-0 right-0 bottom-0 left-0 m-auto h-fit text-center text-4xl text-black/20">
-            Draw a picture!
-          </h1>
-        </Show>
-        <form on:submit={onSubmit} class="flex flex-1 flex-col gap-y-2">
-          <div class="flex w-full flex-row gap-x-4">
+    <main class="join-page">
+      <Show
+        when={status() !== 'joined'}
+        fallback={
+          <section class="receipt">
+            <h1>You’re in!</h1>
+            <p>You can close this tab.</p>
+          </section>
+        }
+      >
+        <form autocomplete="off" class="portrait-form" onSubmit={submit}>
+          <header class="portrait-header">
+            <h1>Join the game</h1>
+            <label for="player-name">Your name</label>
             <input
-              type="text"
+              id="player-name"
               name="name"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck={false}
+              required
               value={name()}
-              onKeyDown={(e) => onChange(e)}
-              placeholder="Your name"
-              class="w-full border-b border-b-black/20 pb-2 text-xl outline-hidden hover:border-b-black/50 focus:border-b-black/50"
+              onInput={(e) => setName(e.currentTarget.value)}
             />
-            <button type="submit" disabled={submitting()}>
-              Submit
+          </header>
+          <div class="portrait-space">
+            <div class="paper">
+              <canvas
+                width={side}
+                height={side}
+                aria-label="Draw your portrait"
+                onPointerDown={(e) => {
+                  if (e.button !== 0 || pointer !== null || status() !== 'editing') return;
+                  pointer = e.pointerId;
+                  e.currentTarget.setPointerCapture(pointer);
+                  mark(e.currentTarget, e, false);
+                  setHasInk(true);
+                }}
+                onPointerMove={(e) => {
+                  if (e.pointerId === pointer) mark(e.currentTarget, e, true);
+                }}
+                onLostPointerCapture={(e) => {
+                  if (e.pointerId === pointer) pointer = null;
+                }}
+              />
+              <Show when={!hasInk()}>
+                <span>Draw your portrait</span>
+              </Show>
+            </div>
+          </div>
+          <footer>
+            <p role="alert">{error()}</p>
+            <button type="submit" disabled={status() === 'sending'}>
+              {status() === 'sending' ? 'Joining…' : 'Join game'}
             </button>
-          </div>
-          <div class="h-full w-full" ref={canvasContainer}>
-            <canvas ref={canvas} class="h-full w-full border" />
-          </div>
+          </footer>
         </form>
       </Show>
-    </div>
+    </main>
   );
 }

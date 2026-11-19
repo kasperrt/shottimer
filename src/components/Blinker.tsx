@@ -1,63 +1,17 @@
-import { createEffect, createSignal, on, onCleanup, Show } from 'solid-js';
-import type { Game } from '@/stores/game';
+import { Drawing } from '@/components/Drawing';
 import { settings } from '@/stores/settings';
-import type { Timeout } from '@/types/types';
+import type { DrawnPlayer } from '@/types/types';
 
-interface Props {
-  winner: Game['winner'];
-}
-
-export function Blinker({ winner }: Props) {
-  const { blinkingEnabled } = settings;
-  const [blink, setBlink] = createSignal<boolean>(false);
-  const [color, setColor] = createSignal<(typeof colors)[number] | 'white'>();
-  const colors = ['red', 'blue', 'purple', 'yellow', 'green', 'red'] as const;
-  let blinkTimeout: Timeout = null;
-
-  const doBlink = (c = 0, l = 0) => {
-    let current = c;
-    let loop = l;
-    if (loop > 5) {
-      setColor('white');
-      setBlink(false);
-      return;
-    }
-
-    if (current > colors.length) {
-      current = 0;
-      loop++;
-    }
-
-    setBlink(true);
-    setColor(colors[current]);
-    blinkTimeout && clearTimeout(blinkTimeout);
-    blinkTimeout = setTimeout(() => {
-      doBlink(current + 1, loop);
-    }, 100);
-  };
-
-  createEffect(
-    on(winner, (winner) => {
-      if (!winner) {
-        setBlink(false);
-        return;
-      }
-
-      if (blink()) {
-        return;
-      }
-
-      doBlink();
-    }),
-  );
-
-  onCleanup(() => {
-    blinkTimeout && clearTimeout(blinkTimeout);
-  });
-
+export function Blinker(props: { winner: DrawnPlayer }) {
   return (
-    <Show when={blink() && blinkingEnabled()}>
-      <div class="pointer-events-none absolute inset-0 z-0 h-full w-full" style={{ 'background-color': color() }} />
-    </Show>
+    <div class="winner-call" data-animate={settings.blinkingEnabled() ? 'true' : 'false'} role="status">
+      <div class="winner-slip">
+        <Drawing winner={props.winner} />
+        <div>
+          <p>Your turn</p>
+          <h1>{props.winner.name}</h1>
+        </div>
+      </div>
+    </div>
   );
 }

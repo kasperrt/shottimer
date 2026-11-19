@@ -1,35 +1,40 @@
 import qrcode from 'qrcode';
-import { createEffect, createSignal, Show } from 'solid-js';
-import type { Game } from '@/stores/game';
+import { createEffect, Show } from 'solid-js';
 
-interface Props {
-  gameId: Game['gameId'];
-}
-
-export function Join({ gameId }: Props) {
-  const [code, setCode] = createSignal<string>('');
-  const joinUrl = () => `${window.location.protocol}//${window.location.host}/${gameId()}`;
-
-  createEffect(async () => {
-    const c = await qrcode.toDataURL(joinUrl());
-    setCode(c);
+export function Join(props: { gameId: string | null }) {
+  let canvas!: HTMLCanvasElement;
+  const url = () => (props.gameId ? new URL(props.gameId, window.location.origin).href : undefined);
+  createEffect(url, (href) => {
+    if (href) {
+      qrcode.toCanvas(
+        canvas,
+        href,
+        {
+          errorCorrectionLevel: 'H',
+          margin: 4,
+          scale: 6,
+          color: { dark: '#111111', light: '#00000000' },
+        },
+        (error) => {
+          if (error) console.error('Could not render join code', error);
+        },
+      );
+    }
   });
-
   return (
-    <div class="h-40">
-      <Show when={gameId()}>
-        <div class="flex w-full flex-col items-center justify-center">
-          <div class="text-center">
-            Join{' '}
-            <a href={joinUrl()} target="_blank" rel="noreferrer">
-              {joinUrl()}
-            </a>
-          </div>
-          <div class="size-28">
-            <img src={code()} alt={`Join ${joinUrl()}`} class="size-28" />
-          </div>
-        </div>
-      </Show>
-    </div>
+    <a class="join-link" href={url()} target="_blank" rel="noreferrer" aria-busy={props.gameId ? 'false' : 'true'}>
+      <span class="join-code">
+        <canvas ref={canvas} aria-label="Scan to join the game" />
+        <Show when={props.gameId}>
+          <svg class="join-code-logo" viewBox="-8 0 124 146" aria-hidden="true">
+            <image href="/assets/favicon.png" width="150" height="150" />
+          </svg>
+        </Show>
+      </span>
+      <span>
+        Scan to join
+        <small>{props.gameId ? `${window.location.host}/${props.gameId}` : 'Connecting…'}</small>
+      </span>
+    </a>
   );
 }

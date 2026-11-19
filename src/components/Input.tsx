@@ -1,18 +1,20 @@
-import { createSignal, createUniqueId } from 'solid-js';
+import { nanoid } from 'nanoid';
+import { createSignal } from 'solid-js';
 import type { Game } from '@/stores/game';
 
 interface Props {
   addPlayer: Game['addPlayer'];
 }
 
-export function Input({ addPlayer }: Props) {
+export function Input(props: Props) {
   const [name, setName] = createSignal('');
 
   const onSubmit = (e: Event) => {
     e.preventDefault();
-    addPlayer({
-      name: name(),
-      id: createUniqueId(),
+    if (!name().trim()) return;
+    props.addPlayer({
+      name: name().trim(),
+      id: nanoid(),
       joined: Date.now(),
       score: 0,
     });
@@ -25,14 +27,22 @@ export function Input({ addPlayer }: Props) {
   };
 
   return (
-    <form on:submit={onSubmit} class="text-center">
+    <form autocomplete="off" onSubmit={onSubmit} class="add-player">
       <input
         name="Name"
-        on:change={onChange}
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck={false}
+        onInput={onChange}
         value={name()}
-        placeholder="Type player name here..."
-        class="m-auto w-5/6 max-w-4xl border-b border-b-black/20 bg-transparent pb-2 text-center text-3xl font-thin outline-hidden"
+        aria-label="Player name"
+        placeholder="Add a player…"
+        class="player-input"
       />
+      <button type="submit" aria-label="Add player">
+        ↵
+      </button>
     </form>
   );
 }

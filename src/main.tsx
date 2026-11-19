@@ -1,4 +1,4 @@
-import { Routes } from '@generouted/solid-router/lazy';
-import { render } from 'solid-js/web';
+import { render } from '@solidjs/web';
+import { Router } from './router';
 
-render(Routes, document.getElementById('app') as HTMLElement);
+render(() => <Router />, document.getElementById('app') as HTMLElement);
