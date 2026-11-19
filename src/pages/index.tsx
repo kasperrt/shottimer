@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { createEffect, createSignal, onCleanup, onSettled } from 'solid-js';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { getHttpError } from 'wiretyped';
 import { DancingBeers } from '@/components/DancingBeers';
 import { Input } from '@/components/Input';
@@ -49,25 +49,42 @@ export default function Landing() {
     const timeout = setTimeout(() => setCarried(selected), revealMs);
     return () => clearTimeout(timeout);
   });
-  onSettled(() => {
+  const [inviteSession, reopen] = createSignal(0);
+  const [expired, setExpired] = createSignal(false);
+  createEffect(inviteSession, () => {
+    setExpired(false);
+    const connection = new AbortController();
     let disposed = false;
     let closer: VoidFunction | undefined;
     void httpClient
-      .sse('/rtd', null, ([err, event]) => {
-        if (disposed) return;
-        if (err) {
-          return;
-        }
+      .sse(
+        '/rtd',
+        null,
+        ([err, event]) => {
+          if (disposed) return;
+          if (err) {
+            setGameId(null);
+            return;
+          }
 
-        if (event.type === 'join') {
-          setGameId(event.data.id);
-          return;
-        }
+          if (event.type === 'expired') {
+            connection.abort();
+            setGameId(null);
+            setExpired(true);
+            return;
+          }
 
-        if (event.type === 'player') {
-          addPlayer(event.data);
-        }
-      })
+          if (event.type === 'join') {
+            setGameId(event.data.id);
+            return;
+          }
+
+          if (event.type === 'player') {
+            addPlayer(event.data);
+          }
+        },
+        { signal: connection.signal, errorConnect: true },
+      )
       .then(([error, close]) => {
         if (error) {
           if (!disposed) window.alert('Something went wrong when opening connection');
@@ -76,6 +93,7 @@ export default function Landing() {
       });
     return () => {
       disposed = true;
+      connection.abort();
       closer?.();
     };
   });
@@ -97,7 +115,13 @@ export default function Landing() {
         </div>
         <div class="host-content">
           <Timer winner={announcing()} countdown={countdown()} />
-          <Join gameId={gameId()} />
+          {expired() ? (
+            <button type="button" class="join-link" onClick={() => reopen((session) => session + 1)}>
+              Reopen player invites
+            </button>
+          ) : (
+            <Join gameId={gameId()} />
+          )}
           <Input addPlayer={addPlayer} full={players.filter((player) => !player.drawing).length >= maxLocalPlayers} />
         </div>
         <Scoreboard players={players} removePlayer={leave} />

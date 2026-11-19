@@ -128,3 +128,65 @@ describe('game admissions', () => {
     }
   });
 });
+
+describe('room lifetimes and isolation', () => {
+  it.each([false, true])('isolates clients with trustIngress=%s', async (trustIngress) => {
+    const app = createGameRoutes(undefined, { trustIngress, roomsPerPeer: 1 });
+    const open = (socket: string, forwarded: string) =>
+      app.request(
+        '/rtd',
+        {
+          headers: { 'X-Forwarded-For': forwarded },
+        },
+        { incoming: { socket: { remoteAddress: socket } } },
+      );
+    const first = await open('192.0.2.1', '192.0.2.3');
+    try {
+      expect((await open('192.0.2.1', '192.0.2.9, 192.0.2.3')).status).toBe(429);
+      const other = await open(trustIngress ? '192.0.2.1' : '192.0.2.2', '192.0.2.4');
+      expect(other.status).toBe(200);
+      await other.body?.cancel();
+    } finally {
+      await first.body?.cancel();
+    }
+    const again = await open('192.0.2.1', '192.0.2.3');
+    expect(again.status).toBe(200);
+    await again.body?.cancel();
+  });
+
+  it('cancels an unfinished upload and admits the next player', async () => {
+    const app = createGameRoutes(undefined, { ioMs: 50 });
+    const room = await openRoom(app);
+    const cancel = vi.fn();
+    try {
+      const response = await app.request(`/join/${room.id}`, {
+        method: 'POST',
+        body: new ReadableStream({ cancel }),
+        duplex: 'half',
+      } as RequestInit);
+      expect(response.status).toBe(408);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect((await join(app, room.id)).status).toBe(204);
+    } finally {
+      await room.close();
+    }
+  });
+
+  it('closes a blocked stream and releases its room', async () => {
+    const app = createGameRoutes(undefined, { ioMs: 50, roomsPerPeer: 1 });
+    const room = await openRoom(app);
+    expect((await join(app, room.id)).status).toBe(204);
+    expect((await join(app, room.id)).status).toBe(404);
+    const next = await openRoom(app);
+    await next.close();
+  });
+
+  it('expires an unused invite and releases its host slot', async () => {
+    const app = createGameRoutes(undefined, { idleMs: 50, roomsPerPeer: 1 });
+    const room = await openRoom(app);
+    expect(await room.readEvent()).toBeNull();
+    expect((await join(app, room.id)).status).toBe(404);
+    await room.close();
+    await (await openRoom(app)).close();
+  });
+});

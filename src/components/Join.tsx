@@ -24,7 +24,11 @@ export function Join(props: { gameId: string | null }) {
   return (
     <a class="join-link" href={url()} target="_blank" rel="noreferrer" aria-busy={props.gameId ? 'false' : 'true'}>
       <span class="join-code">
-        <canvas ref={canvas} aria-label="Scan to join the game" />
+        <canvas
+          ref={canvas}
+          style={{ visibility: props.gameId ? 'visible' : 'hidden' }}
+          aria-label="Scan to join the game"
+        />
         <Show when={props.gameId}>
           <svg class="join-code-logo" viewBox="-8 0 124 146" aria-hidden="true">
             <image href="/assets/favicon.png" width="150" height="150" />
