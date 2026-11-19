@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { onSettled } from 'solid-js';
+import { createEffect, createSignal, onSettled } from 'solid-js';
 import { DancingBeers } from '@/components/DancingBeers';
 import { Input } from '@/components/Input';
 import { Join } from '@/components/Join';
@@ -8,6 +8,7 @@ import { Scoreboard } from '@/components/Scoreboard';
 import { Timer } from '@/components/Timer';
 import { httpClient } from '@/lib/http';
 import { useGame } from '@/stores/game';
+import type { DrawnPlayer } from '@/types/types';
 import Rules from './+rules';
 import Settings from './+settings';
 
@@ -17,6 +18,15 @@ export default function Landing() {
   const open = (modal: string) => navigate(location.pathname, { state: { modal } });
   const close = () => navigate(location.pathname, { replace: true, state: {} });
   const { gameId, setGameId, countdown, winner, players, addPlayer, removePlayer } = useGame();
+  const [carried, setCarried] = createSignal<DrawnPlayer | null>(null);
+  const revealMs = 3600;
+  const announcing = () => (winner() !== carried() ? winner() : null);
+  createEffect(winner, (selected) => {
+    setCarried(null);
+    if (!selected) return;
+    const timeout = setTimeout(() => setCarried(selected), revealMs);
+    return () => clearTimeout(timeout);
+  });
   onSettled(() => {
     let disposed = false;
     let closer: VoidFunction | undefined;
@@ -50,7 +60,7 @@ export default function Landing() {
 
   return (
     <>
-      <div class="host">
+      <div class="host" style={{ '--reveal-duration': `${revealMs}ms` }}>
         <div class="host-nav">
           <button type="button" onClick={() => open('/settings')} class="cursor-pointer">
             Settings
@@ -64,13 +74,17 @@ export default function Landing() {
           </button>
         </div>
         <div class="host-content">
-          <Timer winner={winner()} countdown={countdown()} />
+          <Timer winner={announcing()} countdown={countdown()} />
           <Join gameId={gameId()} />
           <Input addPlayer={addPlayer} />
         </div>
         <Scoreboard players={players} removePlayer={removePlayer} />
         <footer class="host-footer">
-          <DancingBeers winner={winner()} />
+          <DancingBeers
+            playing={players.length > 0}
+            announcing={announcing()}
+            carried={winner() === carried() ? carried() : null}
+          />
           <a href="https://github.com/kasperrt/shottimer" class="source-link">
             GitHub
           </a>

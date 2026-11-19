@@ -1,9 +1,10 @@
-import { createEffect, createSignal, For, onSettled, Show } from 'solid-js';
+import { createEffect, For, Show } from 'solid-js';
+import { Drawing } from '@/components/Drawing';
 import { settings } from '@/stores/settings';
 import type { DrawnPlayer } from '@/types/types';
+import { walkBeer } from '@/utils/walkBeer';
 
-// The handles face outwards so the two glasses can knock rims on the downbeat.
-function Beer() {
+function Beer(props: { holding: boolean }) {
   return (
     <svg
       class="beer"
@@ -24,6 +25,9 @@ function Beer() {
         />
         <path d="m19 37 1 10m3 8 1 4" stroke="white" />
         <path d="m30 40 .3 1m11-2 .3 1m-10 5q5 6 10-1" />
+        <Show when={props.holding}>
+          <path d="M15 44Q0 39 5 5l4-4m40 41q20-6 15-39l-5-3" />
+        </Show>
       </g>
       <path class="beer-foot" d="m24 68-3 11-9 1" />
       <path class="beer-foot other" d="m40 68 5 9 8-2" />
@@ -49,41 +53,38 @@ function Confetti() {
   );
 }
 
-export function DancingBeers(props: { winner: DrawnPlayer | null }) {
-  let track!: HTMLDivElement;
-  const [celebration, setCelebration] = createSignal<DrawnPlayer | null>(null);
-  onSettled(() => {
-    const walk = () => track.style.setProperty('--step', `${Math.random() * 100}%`);
-    const interval = setInterval(walk, 3400);
-    walk();
-    return () => clearInterval(interval);
-  });
-
+function Walker(props: { lane: number; playing: boolean; party: DrawnPlayer | null; carried?: DrawnPlayer | null }) {
+  let actor!: HTMLDivElement;
   createEffect(
-    () => settings.blinkingEnabled() && props.winner,
-    (winner) => {
-      setCelebration(winner || null);
-      if (!winner) return;
-      const timeout = setTimeout(() => setCelebration(null), 3400);
-      return () => clearTimeout(timeout);
+    () => props.playing && !props.party,
+    (walking) => {
+      if (walking) return walkBeer(actor, props.lane);
     },
   );
+  const holding = () => !!props.carried?.drawing?.x.length;
+  return (
+    <div class="beer-actor" ref={actor} data-mode={props.party ? 'party' : props.playing ? 'walking' : 'idle'}>
+      <div class="beer-facing">
+        <Beer holding={holding()} />
+      </div>
+      <Show when={holding()}>
+        <div class="beer-sign">
+          <Drawing winner={props.carried ?? null} />
+        </div>
+      </Show>
+      <Show keyed when={props.party}>
+        {(_winner) => <Confetti />}
+      </Show>
+    </div>
+  );
+}
 
+export function DancingBeers(props: { playing: boolean; announcing: DrawnPlayer | null; carried: DrawnPlayer | null }) {
+  const party = () => (settings.blinkingEnabled() ? props.announcing : null);
   return (
     <div class="beer-floor" aria-hidden="true">
-      <div class="beer-track" ref={track}>
-        <div class="dancing-beers" data-party={celebration() ? 'true' : 'false'}>
-          <span>
-            <Beer />
-          </span>
-          <span>
-            <Beer />
-          </span>
-          <Show keyed when={celebration()}>
-            {(_winner) => <Confetti />}
-          </Show>
-        </div>
-      </div>
+      <Walker lane={0} playing={props.playing} party={party()} carried={props.carried} />
+      <Walker lane={1} playing={props.playing} party={party()} />
     </div>
   );
 }

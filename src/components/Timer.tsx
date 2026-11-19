@@ -29,16 +29,6 @@ function Clock(props: { deadline: number }) {
 }
 
 export function Timer(props: { countdown: number | null; winner: DrawnPlayer | null }) {
-  const [visible, setVisible] = createSignal(false);
-  createEffect(
-    () => props.winner,
-    (winner) => {
-      setVisible(!!winner);
-      if (!winner) return;
-      const timeout = setTimeout(() => setVisible(false), 3600);
-      return () => clearTimeout(timeout);
-    },
-  );
   return (
     <div class="timer">
       <div class="clock" role="timer" aria-label="Round countdown">
@@ -55,7 +45,7 @@ export function Timer(props: { countdown: number | null; winner: DrawnPlayer | n
           </Show>
         </Show>
       </div>
-      <Show keyed when={visible() && props.winner}>
+      <Show keyed when={props.winner}>
         {(winner) => <Blinker winner={winner} />}
       </Show>
     </div>

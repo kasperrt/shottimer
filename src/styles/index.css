@@ -510,27 +510,13 @@ select {
   }
 }
 
-.dancing-beers {
-  position: relative;
-  width: max-content;
-  display: flex;
-  align-items: end;
-  pointer-events: none;
-}
-.dancing-beers span {
-  width: var(--mug);
-}
-.dancing-beers span:first-child {
-  transform: scaleX(-1);
-  margin-right: -0.45rem;
-}
 .beer {
   width: 100%;
   overflow: visible;
   transform-origin: 45% 88%;
   animation: beer-hop 1.8s ease-in-out infinite;
 }
-.dancing-beers span:first-child .beer {
+.beer-actor:first-child .beer {
   animation-delay: -80ms;
 }
 .beer-foot {
@@ -586,23 +572,65 @@ select {
 
 .beer-floor {
   --mug: clamp(2.6rem, 6vw, 5.2rem);
+  position: relative;
   flex: 1;
   min-width: 0;
-  max-width: 38rem;
-  padding-right: calc(2 * var(--mug));
+  height: calc(var(--mug) * 92 / 78);
   pointer-events: none;
 }
-.beer-track {
-  transform: translateX(var(--step, 0%));
-  transition: transform 2.8s ease-in-out;
+.beer-actor {
+  width: var(--mug);
+  position: absolute;
+  bottom: 0;
+  transform: translateX(var(--travel, 0px));
 }
-.dancing-beers[data-party='true'] .beer {
+.beer-actor:nth-child(2) {
+  left: var(--mug);
+}
+.beer-facing {
+  transform: scaleX(var(--facing, 1));
+}
+.beer-actor:first-child {
+  --facing: -1;
+}
+.beer-actor[data-mode='walking'] .beer,
+.beer-actor[data-mode='walking'] .beer-foot {
+  animation: none;
+}
+.beer-actor[data-mode='walking'] .beer-body {
+  transform: translateY(var(--bob, 0px));
+}
+.beer-sign {
+  position: absolute;
+  bottom: 96%;
+  left: 45%;
+  width: 90%;
+  transform: translate(-50%, var(--bob, 0px));
+  background: white;
+  border: 2px solid var(--ink);
+}
+.beer-sign .winner-portrait {
+  width: 100%;
+}
+.winner-call {
+  animation: reveal-fade var(--reveal-duration) linear both;
+}
+@keyframes reveal-fade {
+  0%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.beer-actor[data-mode='party'] .beer {
   animation: beer-leap 530ms ease-in-out infinite;
 }
-.dancing-beers[data-party='true'] span:nth-child(2) .beer {
+.beer-actor:nth-child(2)[data-mode='party'] .beer {
   animation-delay: -160ms;
 }
-.dancing-beers[data-party='true'] .beer-foot {
+.beer-actor[data-mode='party'] .beer-foot {
   animation-duration: 170ms;
 }
 @keyframes beer-leap {
@@ -653,11 +681,7 @@ select {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .beer-track {
-    transform: none;
-    transition: none;
-  }
-  .dancing-beers[data-party='true'] .beer,
+  .beer-actor[data-mode='party'] .beer,
   .confetti i {
     animation: none;
   }
