@@ -6,7 +6,7 @@ function leg(hip: number, phase: number) {
   const lift = Math.sin(Math.PI * swing);
   const foot = hip + offset;
   const heel = 82 - lift * 7;
-  return `M${hip} 66 Q${hip + 5 + lift * 6} 73 ${foot} ${heel} l6 ${-lift * 2}`;
+  return `M${hip} 62 Q${hip + 5 + lift * 6} 73 ${foot} ${heel} l6 ${-lift * 2}`;
 }
 
 export function walkBeer(actor: HTMLDivElement, lane: number) {
@@ -84,7 +84,5 @@ export function walkBeer(actor: HTMLDivElement, lane: number) {
     cancelAnimationFrame(frame);
     resize.disconnect();
     motion.removeEventListener('change', updateMotion);
-    feet[0].setAttribute('d', 'm24 68-3 11-9 1');
-    feet[1].setAttribute('d', 'm40 68 5 9 8-2');
   };
 }

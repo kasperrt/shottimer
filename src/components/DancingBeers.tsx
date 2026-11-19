@@ -4,6 +4,20 @@ import { settings } from '@/stores/settings';
 import type { DrawnPlayer } from '@/types/types';
 import { walkBeer } from '@/utils/walkBeer';
 
+// Both joints rotate about local SVG origins, keeping the shin attached to the knee.
+function JumpLeg(props: { hip: number; outward: number }) {
+  return (
+    <g transform={`translate(${props.hip} 62) scale(${props.outward} 1)`}>
+      <g class="jump-thigh">
+        <path d="M0 0 L3 10" />
+        <g transform="translate(3 10)">
+          <path class="jump-shin" d="M0 0 L-1 9 Q2 10 6 9" />
+        </g>
+      </g>
+    </g>
+  );
+}
+
 function Beer(props: { holding: boolean }) {
   return (
     <svg
@@ -16,6 +30,14 @@ function Beer(props: { holding: boolean }) {
       stroke-linejoin="round"
       aria-hidden="true"
     >
+      <g class="jump-legs">
+        <JumpLeg hip={24} outward={-1} />
+        <JumpLeg hip={40} outward={1} />
+      </g>
+      <g class="walk-legs">
+        <path class="beer-foot" d="M24 62 L21 79 L12 80" />
+        <path class="beer-foot" d="M40 62 L45 77 L53 75" />
+      </g>
       <g class="beer-body">
         <path d="M48 28c17-6 23 0 22 11-1 11-10 16-20 15l1-8c7 1 12-2 12-8 0-5-5-6-12-3" fill="white" />
         <path d="m12 23 3 39q1 6 8 5l24-2q5-1 5-7l-2-37z" fill="var(--marker)" />
@@ -29,8 +51,6 @@ function Beer(props: { holding: boolean }) {
           <path d="M15 44Q0 39 5 5l4-4m40 41q20-6 15-39l-5-3" />
         </Show>
       </g>
-      <path class="beer-foot" d="m24 68-3 11-9 1" />
-      <path class="beer-foot other" d="m40 68 5 9 8-2" />
     </svg>
   );
 }
