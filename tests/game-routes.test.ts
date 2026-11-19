@@ -234,3 +234,57 @@ describe('quota boundaries', () => {
     }
   });
 });
+
+describe('browser and upload admission', () => {
+  it('checks browser origin before allocating a room', async () => {
+    const app = createGameRoutes(undefined, { roomsPerPeer: 1, browserOrigins: ['https://host.example'] });
+    for (const headers of [
+      { 'Sec-Fetch-Site': 'cross-site' },
+      { 'Sec-Fetch-Site': 'same-site', Origin: 'https://sibling.example' },
+      { Origin: 'https://other.example' },
+    ] as Record<string, string>[]) {
+      expect((await app.request('/rtd', { headers })).status).toBe(403);
+    }
+    for (const headers of [
+      { 'Sec-Fetch-Site': 'same-origin' },
+      { 'Sec-Fetch-Site': 'same-site', Origin: 'https://host.example' },
+    ] as Record<string, string>[]) {
+      const response = await app.request('/rtd', { headers });
+      expect(response.status).toBe(200);
+      await response.body?.cancel();
+    }
+  });
+
+  it('shares pending uploads across rooms by client network and returns slots after cancellation', async () => {
+    const app = createGameRoutes();
+    const first = await openRoom(app);
+    const second = await openRoom(app);
+    const controller = new AbortController();
+    const requests = [];
+    const submit = (id: string, ip: string, body: BodyInit) =>
+      app.request(`/join/${id}`, { method: 'POST', duplex: 'half', body, signal: controller.signal } as RequestInit, {
+        incoming: { socket: { remoteAddress: ip }, complete: true },
+      });
+    try {
+      for (let i = 0; i < 8; i++) {
+        requests.push(submit(i % 2 ? first.id : second.id, '2001:db8::1', new ReadableStream()));
+      }
+      expect((await submit(second.id, '2001:db8::2', '{}')).status).toBe(429);
+      expect((await submit(second.id, '2001:db8:1::1', JSON.stringify(guest))).status).toBe(204);
+      await second.readEvent();
+      controller.abort();
+      await Promise.all(requests);
+      const result = await app.request(
+        `/join/${first.id}`,
+        { method: 'POST', body: JSON.stringify(guest) },
+        { incoming: { socket: { remoteAddress: '2001:db8::2' } } },
+      );
+      expect(result.status).toBe(204);
+    } finally {
+      controller.abort();
+      await Promise.all(requests);
+      await first.close();
+      await second.close();
+    }
+  });
+});

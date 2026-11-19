@@ -69,7 +69,10 @@ app.use(
   }),
 );
 
-app.route('/', createGameRoutes(undefined, { trustIngress: process.env.TRUST_INGRESS_PROXY === 'true' }));
+app.route(
+  '/',
+  createGameRoutes(undefined, { browserOrigins: CORS, trustIngress: process.env.TRUST_INGRESS_PROXY === 'true' }),
+);
 
 const distDir = join(process.cwd(), 'dist');
 const distIndex = join(distDir, 'index.html');
@@ -83,6 +86,8 @@ if (hasDist) {
   app.use('/*', async (c, next) => {
     await next();
     if (c.res.headers.get('Content-Type')?.includes('text/html')) {
+      c.header('Content-Security-Policy', "frame-ancestors 'none'");
+      c.header('X-Frame-Options', 'DENY');
       c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   });
