@@ -46,19 +46,34 @@ function throttled(ctx: Context) {
 
 export function createGameRoutes(
   newInvite: () => string = nanoid,
-  { trustIngress = false, roomsPerPeer = 8, idleMs = 90 * 60_000, ioMs = 10_000 } = {},
+  {
+    trustIngress = false,
+    roomsPerPeer = 8,
+    idleMs = 90 * 60_000,
+    ioMs = 10_000,
+    browserOrigins = [] as readonly string[],
+  } = {},
 ) {
   const rooms = new Map<string, Room>();
   const active = new Map<string, number>();
   const starts = new MinuteBudget(240, 60);
   const joins = new MinuteBudget(1200, 300);
   let pendingJoins = 0;
+  const pendingByPeer = new Map<string, number>();
   const invalidRemovals = new MinuteBudget(1200, 120);
   const hostRemovals = new MinuteBudget(256 * 120, 120);
   const roomRequests = new MinuteBudget(1200, 120);
   const routes = new Hono<GameEnv & { Variables: { room: Room } }>();
 
   routes.get('/rtd', (ctx) => {
+    const origin = ctx.req.header('Origin');
+    const site = ctx.req.header('Sec-Fetch-Site');
+    const foreignSite = site === 'same-site' || site === 'cross-site';
+    if (foreignSite || origin) {
+      const allowed =
+        origin && (browserOrigins.includes(origin) || (!foreignSite && origin === new URL(ctx.req.url).origin));
+      if (!allowed) return ctx.text('Open the game from its own site.', 403);
+    }
     const key = peer(ctx, trustIngress);
     const count = active.get(key) ?? 0;
     if (rooms.size >= 256 || count >= roomsPerPeer || !starts.take(key)) return throttled(ctx);
@@ -103,14 +118,17 @@ export function createGameRoutes(
   routes.post(
     '/join/:id',
     async (ctx, next) => {
-      if (!joins.take(peer(ctx, trustIngress))) return throttled(ctx);
+      const key = peer(ctx, trustIngress);
+      if (!joins.take(key)) return throttled(ctx);
       const id = ctx.req.param('id');
       const room = rooms.get(id);
       if (!room || room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
       if (!roomRequests.take(id)) return throttled(ctx);
       ctx.set('room', room);
       if (room.players.size >= maxRemotePlayers) return ctx.text('Game full.', 409);
-      if (room.pending >= 12 || pendingJoins >= 32) return throttled(ctx);
+      const pending = pendingByPeer.get(key) ?? 0;
+      if (pending >= 8 || room.pending >= 12 || pendingJoins >= 32) return throttled(ctx);
+      pendingByPeer.set(key, pending + 1);
       room.pending++;
       pendingJoins++;
       try {
@@ -118,6 +136,9 @@ export function createGameRoutes(
       } finally {
         room.pending--;
         pendingJoins--;
+        const remaining = (pendingByPeer.get(key) ?? 1) - 1;
+        if (remaining) pendingByPeer.set(key, remaining);
+        else pendingByPeer.delete(key);
       }
     },
     async (ctx) => {
