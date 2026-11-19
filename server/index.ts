@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import client from 'prom-client';
+import type { GameEnv } from './admission.js';
 import { createGameRoutes } from './game-routes.js';
 
 dotenv.config({ quiet: true });
@@ -15,7 +16,7 @@ const CORS = (process.env.CORS ?? process.env.VITE_CORS ?? '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const app = new Hono();
+const app = new Hono<GameEnv>();
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
 
@@ -68,7 +69,7 @@ app.use(
   }),
 );
 
-app.route('/', createGameRoutes());
+app.route('/', createGameRoutes(undefined, { trustIngress: process.env.TRUST_INGRESS_PROXY === 'true' }));
 
 const distDir = join(process.cwd(), 'dist');
 const distIndex = join(distDir, 'index.html');
@@ -109,11 +110,11 @@ createServer(async (req, res) => {
 
 serve(
   {
-    fetch: (request: Request) => {
+    fetch: (request, bindings) => {
       if (new URL(request.url).pathname === '/metrics') {
         return new Response('Not Found', { status: 404 });
       }
-      return app.fetch(request);
+      return app.fetch(request, bindings);
     },
     port,
   },

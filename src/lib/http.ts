@@ -15,6 +15,7 @@ const endpoints = {
       events: {
         join: z.object({ id: z.string() }),
         player: playerSchema,
+        expired: z.null(),
       },
     },
   },

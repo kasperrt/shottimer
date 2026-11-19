@@ -1,13 +1,16 @@
 import { type Context, Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import { nanoid } from 'nanoid';
 import { maxRemotePlayers, simplePlayerSchema } from '../src/types/types.js';
+import { type GameEnv, peer, readPlayer } from './admission.js';
 
 interface Room {
   stream: SSEStreamingApi;
   players: Set<string>;
   pending: number;
+  closed: AbortController;
+  touch: () => void;
+  send: (event: string, data: string) => Promise<void>;
 }
 
 // A process-wide ceiling bounds both work and the number of keys retained per window.
@@ -36,59 +39,70 @@ class MinuteBudget {
   }
 }
 
-function peer(ctx: Context) {
-  // The socket peer may be a shared ingress. Never accept a client-supplied forwarding header as identity.
-  return ctx.env?.incoming?.socket.remoteAddress ?? 'local';
-}
-
 function throttled(ctx: Context) {
   ctx.header('Retry-After', '60');
   return ctx.text('Please try again in a minute.', 429);
 }
 
-export function createGameRoutes(newInvite: () => string = nanoid) {
+export function createGameRoutes(
+  newInvite: () => string = nanoid,
+  { trustIngress = false, roomsPerPeer = 8, idleMs = 90 * 60_000, ioMs = 10_000 } = {},
+) {
   const rooms = new Map<string, Room>();
+  const active = new Map<string, number>();
   const starts = new MinuteBudget(240, 60);
   const joins = new MinuteBudget(1200, 300);
   let pendingJoins = 0;
   const roomRequests = new MinuteBudget(1200, 120);
-  const routes = new Hono<{ Variables: { room: Room } }>();
+  const routes = new Hono<GameEnv & { Variables: { room: Room } }>();
 
   routes.get('/rtd', (ctx) => {
-    if (rooms.size >= 256 || !starts.take(peer(ctx))) return throttled(ctx);
+    const key = peer(ctx, trustIngress);
+    const count = active.get(key) ?? 0;
+    if (rooms.size >= 256 || count >= roomsPerPeer || !starts.take(key)) return throttled(ctx);
     let id = newInvite();
     while (rooms.has(id)) id = newInvite();
     return streamSSE(ctx, async (stream) => {
-      const room = { stream, players: new Set<string>(), pending: 0 };
-      rooms.set(id, room);
+      const closed = new AbortController();
       const disconnected = new Promise<void>((resolve) => stream.onAbort(resolve));
-      let pingPending = false;
-      const heartbeat = setInterval(async () => {
-        if (pingPending) return;
-        pingPending = true;
-        try {
-          await stream.writeSSE({ event: 'ping', data: 'keepalive' });
-        } catch {
+      async function send(event: string, data: string) {
+        const timer = setTimeout(() => {
           stream.abort();
+          ctx.env?.outgoing?.destroy();
+        }, ioMs);
+        try {
+          await stream.writeSSE({ event, data });
         } finally {
-          pingPending = false;
+          clearTimeout(timer);
         }
-      }, 30_000);
-      try {
-        await stream.writeSSE({ event: 'join', data: JSON.stringify({ id }) });
-        await disconnected;
-      } finally {
-        clearInterval(heartbeat);
-        if (rooms.get(id) === room) rooms.delete(id);
       }
+      const idle = setTimeout(() => {
+        closed.abort();
+        void send('expired', 'null').finally(() => stream.abort());
+      }, idleMs);
+      const room = { stream, players: new Set<string>(), pending: 0, closed, touch: () => idle.refresh(), send };
+      active.set(key, count + 1);
+      rooms.set(id, room);
+      const heartbeat = setInterval(() => void send('ping', 'keepalive'), 30_000);
+      stream.onAbort(() => {
+        closed.abort();
+        clearTimeout(idle);
+        clearInterval(heartbeat);
+        rooms.delete(id);
+        const remaining = (active.get(key) ?? 1) - 1;
+        if (remaining) active.set(key, remaining);
+        else active.delete(key);
+      });
+      await send('join', JSON.stringify({ id }));
+      await disconnected;
     });
   });
 
   routes.use('/join/:id', async (ctx, next) => {
-    if (!joins.take(peer(ctx))) return throttled(ctx);
+    if (!joins.take(peer(ctx, trustIngress))) return throttled(ctx);
     const id = ctx.req.param('id');
     const room = rooms.get(id);
-    if (!room || room.stream.aborted) return ctx.text('Game closed.', 404);
+    if (!room || room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
     if (!roomRequests.take(id)) return throttled(ctx);
     ctx.set('room', room);
     await next();
@@ -109,25 +123,22 @@ export function createGameRoutes(newInvite: () => string = nanoid) {
         pendingJoins--;
       }
     },
-    bodyLimit({ maxSize: 192 * 1024, onError: (ctx) => ctx.text('Portrait too large.', 413) }),
     async (ctx) => {
-      let input: unknown;
-      try {
-        input = await ctx.req.json();
-      } catch {
-        return ctx.text('Invalid JSON.', 400);
-      }
-      const parsed = simplePlayerSchema.safeParse(input);
-      if (!parsed.success) return ctx.text('Invalid player or portrait.', 400);
       const room = ctx.get('room');
-      if (room.stream.aborted || rooms.get(ctx.req.param('id')) !== room) return ctx.text('Game closed.', 404);
+      const body = await readPlayer(ctx, room.closed.signal, ioMs);
+      if (!('input' in body)) return body;
+      const parsed = simplePlayerSchema.safeParse(body.input);
+      if (!parsed.success) return ctx.text('Invalid player or portrait.', 400);
+      if (room.closed.signal.aborted || room.stream.aborted || rooms.get(ctx.req.param('id')) !== room)
+        return ctx.text('Game closed.', 404);
       if (room.players.size >= maxRemotePlayers) return ctx.text('Game full.', 409);
       const player = { ...parsed.data, id: nanoid(), joined: Date.now(), score: 0 };
       // Reserve before yielding. Only the host receives this opaque player ID over its private stream.
       room.players.add(player.id);
       try {
-        await room.stream.writeSSE({ event: 'player', data: JSON.stringify(player) });
-        if (room.stream.aborted) return ctx.text('Game closed.', 404);
+        await room.send('player', JSON.stringify(player));
+        if (room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
+        room.touch();
         return ctx.body(null, 204);
       } catch {
         room.players.delete(player.id);
@@ -141,6 +152,7 @@ export function createGameRoutes(newInvite: () => string = nanoid) {
     if (!credential.startsWith('Bearer ') || !ctx.get('room').players.delete(credential.slice(7))) {
       return ctx.text('Unknown player.', 404);
     }
+    ctx.get('room').touch();
     return ctx.body(null, 204);
   });
   return routes;
