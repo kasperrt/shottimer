@@ -37,6 +37,3 @@ export type Player = z.infer<typeof playerSchema>;
 export type DrawnPlayer = z.infer<typeof drawnPlayerSchema>;
 
 export type GameType = 'ANARCHY' | 'FAIR';
-
-export type Timeout = ReturnType<typeof setTimeout> | null;
-export type Interval = ReturnType<typeof setInterval> | null;

@@ -1,25 +1,26 @@
-import type { JSX } from 'solid-js';
-import { useModals } from '@/router';
+import { useLocation, useNavigate } from '@solidjs/router';
+import type { JSX } from '@solidjs/web';
 
 interface Props {
   children?: JSX.Element;
 }
 
-export function Modal({ children }: Props) {
-  const modals = useModals();
+export function Modal(props: Props) {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const onClose = () => modals.close();
+  const onClose = () => navigate(location.pathname, { replace: true, state: {} });
 
   return (
     <>
       <button
         type="button"
         aria-label="Close modal"
-        class="absolute inset-0 z-20 h-full w-full bg-black/40"
-        on:click={onClose}
+        class="fixed inset-0 z-40 h-full w-full bg-black/40"
+        onClick={onClose}
       />
-      <div class="absolute top-0 right-0 left-0 z-30 m-auto h-fit min-h-screen w-full max-w-xl min-w-full rounded-none bg-white p-8 lg:bottom-0 lg:min-h-[unset] lg:min-w-[unset] lg:rounded-xl">
-        <button type="button" on:click={onClose} class="absolute top-5 right-5 cursor-pointer">
+      <div class="fixed top-0 right-0 left-0 z-50 m-auto h-fit max-h-dvh min-h-screen w-full max-w-xl min-w-full overflow-auto rounded-none bg-white p-8 lg:bottom-0 lg:min-h-[unset] lg:min-w-[unset] lg:rounded-xl">
+        <button type="button" onClick={onClose} aria-label="Close" class="absolute top-5 right-5 cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
             <path
               fill-rule="evenodd"
@@ -29,7 +30,7 @@ export function Modal({ children }: Props) {
             />
           </svg>
         </button>
-        {children}
+        {props.children}
       </div>
     </>
   );

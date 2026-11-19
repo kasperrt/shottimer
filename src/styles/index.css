@@ -25,3 +25,228 @@ body,
 #app {
   height: 100%;
 }
+
+:root {
+  font-family: system-ui, sans-serif;
+  color: #272920;
+  background: #f7f5ee;
+  --rule: #bdbdae;
+  --ink: #273e32;
+}
+
+.host,
+.join-page {
+  min-height: 100svh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.host-nav,
+.source-link,
+.host-content {
+  position: relative;
+  z-index: 20;
+}
+.host-nav {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.75rem;
+}
+.host-nav button:hover,
+.source-link:hover {
+  text-decoration: underline;
+}
+.host-content {
+  margin-block: auto;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 4vh, 3rem);
+  padding: 2rem 0;
+}
+.host-content form {
+  width: min(100%, 30rem);
+}
+.timer,
+.portrait-header h1,
+.receipt h1 {
+  font-family: Georgia, serif;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+.timer {
+  text-align: center;
+  font-size: clamp(3rem, 11vw, 9rem);
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow-wrap: anywhere;
+}
+.timer small {
+  font-size: 0.62em;
+}
+.player-input {
+  width: 100%;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.6rem;
+  text-align: center;
+  font-size: 1.35rem;
+}
+.join-link {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 600;
+}
+.join-link img {
+  width: 5.5rem;
+}
+.join-link small {
+  display: block;
+  overflow-wrap: anywhere;
+  font-weight: normal;
+}
+.source-link {
+  align-self: flex-end;
+  font-size: 0.85rem;
+}
+.winner-portrait,
+.blinker {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+.winner-portrait {
+  opacity: 0.5;
+}
+.winner-portrait canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.blinker {
+  animation: flash 0.7s steps(1) 6;
+}
+@keyframes flash {
+  0%,
+  85% {
+    background: red;
+  }
+  14% {
+    background: blue;
+  }
+  28% {
+    background: purple;
+  }
+  42% {
+    background: yellow;
+  }
+  57% {
+    background: green;
+  }
+  72% {
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blinker {
+    animation: none;
+  }
+}
+
+.join-page {
+  display: grid;
+  place-items: center;
+}
+.portrait-form {
+  width: min(100%, 42rem);
+  height: calc(100dvh - 2 * clamp(1rem, 3vw, 2.5rem));
+  min-height: 24rem;
+  max-height: 64rem;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+}
+.portrait-header {
+  display: grid;
+}
+.portrait-header h1,
+.receipt h1 {
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  margin-bottom: 1rem;
+}
+.portrait-header label {
+  font-size: 0.875rem;
+}
+.portrait-header input {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 1.25rem;
+  min-width: 0;
+}
+.portrait-space {
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+.paper {
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+  position: relative;
+  outline: 1px solid var(--rule);
+  background: #fffefa;
+  box-shadow: 2px 3px 0 #deded2;
+}
+.paper canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+.paper span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #747669;
+  font:
+    italic clamp(1rem, 5vw, 2rem) Georgia,
+    serif;
+}
+.portrait-form footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.portrait-form button {
+  padding: 0.75rem 1.5rem;
+  background: var(--ink);
+  color: white;
+  cursor: pointer;
+}
+.portrait-form button:disabled {
+  opacity: 0.6;
+}
+@media (orientation: landscape) and (max-height: 40rem) {
+  .portrait-form {
+    max-width: 60rem;
+    width: 100%;
+    min-height: 15rem;
+    grid-template-columns: minmax(12rem, 1fr) 2fr;
+    grid-template-rows: 1fr auto;
+  }
+  .portrait-header {
+    align-self: center;
+  }
+  .portrait-space {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+}

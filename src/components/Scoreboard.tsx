@@ -7,32 +7,27 @@ interface Props {
   removePlayer: Game['removePlayer'];
 }
 
-export function Scoreboard({ players, removePlayer }: Props) {
+export function Scoreboard(props: Props) {
   const { scoreEnabled } = settings;
 
-  const onKeyDown = (e: KeyboardEvent, id: string) => {
-    if (e.code !== 'Enter' && e.code !== 'Space') {
-      return;
-    }
-
-    removePlayer(id);
-  };
-
   return (
-    <Show when={scoreEnabled() && players.length > 0}>
+    <Show when={scoreEnabled() && props.players.length > 0}>
       <div class="top-20 left-20 w-full px-8 lg:absolute lg:max-w-48 lg:px-0">
         <h2>Score</h2>
         <hr />
         <ul>
-          <For each={players}>
+          <For each={props.players}>
             {(player) => (
-              <li
-                class="flex w-full cursor-pointer items-center justify-between"
-                on:click={() => removePlayer(player.id)}
-                onKeyDown={(e) => onKeyDown(e, player.id)}
-              >
-                <span>{player.name}</span>
-                <span>{player.score}</span>
+              <li>
+                <button
+                  type="button"
+                  class="flex w-full cursor-pointer items-center justify-between py-1"
+                  aria-label={`Remove ${player.name}`}
+                  onClick={() => props.removePlayer(player.id)}
+                >
+                  <span>{player.name}</span>
+                  <span>{player.score}</span>
+                </button>
               </li>
             )}
           </For>

@@ -1,111 +1,86 @@
-import { createEffect, createSignal, on, onCleanup } from 'solid-js';
-import { createStore, produce } from 'solid-js/store';
-import type { DrawnPlayer, Interval, Player, Timeout } from '@/types/types';
+import { createEffect, createMemo, createSignal, createStore, onCleanup } from 'solid-js';
+import type { DrawnPlayer, Player } from '@/types/types';
 import { drawPlayer } from '@/utils/drawPlayer';
 import { settings } from './settings';
 
 export function useGame() {
-  const { intervals, gameType, soundEnabled } = settings;
   const [gameId, setGameId] = createSignal<string | null>(null);
   const [players, setPlayers] = createStore<Player[]>([]);
-  const [countdown, setCountdown] = createSignal<Date | null>(null);
-  const [winner, setWinner] = createSignal<DrawnPlayer | null>(null, {
-    equals: false,
-  });
+  const [countdown, setCountdown] = createSignal<number | null>(null);
+  const [winner, setWinner] = createSignal<DrawnPlayer | null>(null);
   const bell = new Audio('/assets/sound/bell.mp3');
   const sanic = new Audio('/assets/sound/sanic.mp3');
-  const synth = window.speechSynthesis;
-
-  // This is loud as fuck
   sanic.volume = 0.2;
-  let counter: Interval = null;
-  let soundTimeout: Timeout = null;
+  let roundTimeout: ReturnType<typeof setTimeout>;
+  let soundTimeout: ReturnType<typeof setTimeout>;
+  let command: SpeechSynthesisUtterance | undefined;
 
-  const addPlayer = (player: Player) => setPlayers((prev) => [...prev, player]);
-  const removePlayer = (id: string) => setPlayers((prev) => prev.filter((player) => player.id !== id));
-  const incrementScore = (id: string) =>
-    setPlayers(
-      (prev) => prev.id === id,
-      produce((prev) => prev.score++),
-    );
-
-  const playCommand = () => {
-    if (!soundEnabled()) {
-      return;
+  function stopSound() {
+    clearTimeout(soundTimeout);
+    if (command) {
+      command.onend = command.onerror = null;
+      window.speechSynthesis.cancel();
+      command = undefined;
     }
+    for (const sound of [bell, sanic]) {
+      sound.pause();
+      sound.currentTime = 0;
+    }
+  }
 
-    const drinkCommand = new SpeechSynthesisUtterance(`Your turn to drink ${winner()?.name}`);
-    drinkCommand.onend = () => {
-      const playSanic = Math.floor(Math.random() * 1000 + 1) === 137;
-      const sound = playSanic ? sanic : bell;
-      sound.play();
-
-      soundTimeout && clearTimeout(soundTimeout);
-      soundTimeout = setTimeout(() => {
-        stopSound();
-      }, 10000);
+  function playCommand(name: string) {
+    if (!settings.soundEnabled() || !window.speechSynthesis) return;
+    stopSound();
+    command = new SpeechSynthesisUtterance(`Your turn to drink ${name}`);
+    command.onend = command.onerror = () => {
+      const sound = Math.floor(Math.random() * 1000 + 1) === 137 ? sanic : bell;
+      void sound.play().catch(() => {});
+      soundTimeout = setTimeout(stopSound, 10000);
     };
-    drinkCommand.onerror = drinkCommand.onend;
+    window.speechSynthesis.speak(command);
+  }
 
-    synth.speak(drinkCommand);
-  };
-
-  const stopSound = () => {
-    synth.cancel();
-    sanic.pause();
-    bell.pause();
-    sanic.currentTime = 0;
-    bell.currentTime = 0;
-  };
-
-  const count = () => {
-    const c = countdown();
-    if (!c) {
-      return counter && clearInterval(counter);
-    }
-    const passed = c.getTime() < Date.now();
-    if (!passed) {
-      return;
-    }
-
-    counter && clearInterval(counter);
-    setWinner(drawPlayer(players, gameType()));
-  };
-
-  const startTimer = () => {
-    counter && clearInterval(counter);
-    counter = setInterval(count, 10);
-  };
-
-  createEffect(
-    on(winner, (winner) => {
-      if (!winner) {
+  function startRound() {
+    const minutes = settings.intervals() ?? Math.floor(Math.random() * 6) + 1;
+    const delay = minutes * 60000;
+    const deadline = Date.now() + delay;
+    setCountdown(deadline);
+    function finishRound() {
+      const remaining = deadline - Date.now();
+      if (remaining > 0) {
+        roundTimeout = setTimeout(finishRound, Math.min(remaining, 2 ** 31 - 1));
         return;
       }
-
-      playCommand();
-      incrementScore(winner.id);
-      setCountdown(null);
-    }),
-  );
-
-  createEffect(() => {
-    if (players.length === 0) {
-      setCountdown(null);
-      return;
+      if (!players.length) return;
+      const selected = drawPlayer(players, settings.gameType());
+      setWinner(selected);
+      setPlayers((draft) => {
+        const player = draft.find((entry) => entry.id === selected.id);
+        if (player) player.score++;
+      });
+      playCommand(selected.name);
+      startRound();
     }
-    if (countdown()) {
-      return;
-    }
+    roundTimeout = setTimeout(finishRound, Math.min(delay, 2 ** 31 - 1));
+  }
 
-    const interval = intervals() ?? Math.floor(Math.random() * 6) + 1;
-    setCountdown(new Date(Date.now() + interval * 60000));
-    startTimer();
+  const hasPlayers = createMemo(() => players.length > 0);
+  createEffect(hasPlayers, (active) => {
+    if (active) startRound();
+    else {
+      clearTimeout(roundTimeout);
+      setCountdown(null);
+      setWinner(null);
+    }
   });
 
-  createEffect(() => soundEnabled() && stopSound());
-
-  onCleanup(() => counter && clearInterval(counter));
+  createEffect(settings.soundEnabled, (enabled) => {
+    if (!enabled) stopSound();
+  });
+  onCleanup(() => {
+    clearTimeout(roundTimeout);
+    stopSound();
+  });
 
   return {
     players,
@@ -113,8 +88,15 @@ export function useGame() {
     setGameId,
     winner,
     countdown,
-    addPlayer,
-    removePlayer,
+    addPlayer: (player: Player) =>
+      setPlayers((draft) => {
+        draft.push(player);
+      }),
+    removePlayer: (id: string) =>
+      setPlayers((draft) => {
+        const index = draft.findIndex((player) => player.id === id);
+        if (index >= 0) draft.splice(index, 1);
+      }),
   };
 }
 

@@ -21,7 +21,7 @@ export default function SettingsModal() {
   const onChangeIntervals = (e: Event) => {
     const target = e.target as HTMLInputElement;
     const interval = Number.parseInt(target.value, 10);
-    if (Number.isNaN(interval)) {
+    if (!Number.isFinite(interval) || interval < 1) {
       setIntervals(null);
       return;
     }
@@ -47,7 +47,8 @@ export default function SettingsModal() {
           Intervals (minutes)
           <input
             type="number"
-            onKeyUp={onChangeIntervals}
+            min="1"
+            onInput={onChangeIntervals}
             value={intervals() ?? ''}
             placeholder="Random (1-6)"
             class="border-b border-b-black/20 pb-2 text-right outline-hidden"

@@ -1,4 +1,5 @@
-import { createEffect, onCleanup } from 'solid-js';
+import { useLocation, useNavigate } from '@solidjs/router';
+import { onSettled, Show } from 'solid-js';
 import { Blinker } from '@/components/Blinker';
 import { Drawing } from '@/components/Drawing';
 import { Input } from '@/components/Input';
@@ -6,65 +7,75 @@ import { Join } from '@/components/Join';
 import { Scoreboard } from '@/components/Scoreboard';
 import { Timer } from '@/components/Timer';
 import { httpClient } from '@/lib/http';
-import { useModals } from '@/router';
 import { useGame } from '@/stores/game';
+import Rules from './+rules';
+import Settings from './+settings';
 
 export default function Landing() {
-  const modals = useModals();
+  const navigate = useNavigate();
+  const location = useLocation<{ modal?: string }>();
+  const open = (modal: string) => navigate(location.pathname, { state: { modal } });
   const { gameId, setGameId, countdown, winner, players, addPlayer, removePlayer } = useGame();
-  let closer: VoidFunction | null = null;
+  onSettled(() => {
+    let disposed = false;
+    let closer: VoidFunction | undefined;
+    void httpClient
+      .sse('/rtd', null, ([err, event]) => {
+        if (disposed) return;
+        if (err) {
+          return;
+        }
 
-  createEffect(async () => {
-    const [errListen, close] = await httpClient.sse('/rtd', null, ([err, event]) => {
-      if (err) {
-        return;
-      }
+        if (event.type === 'join') {
+          setGameId(event.data.id);
+          return;
+        }
 
-      if (event.type === 'join') {
-        setGameId(event.data.id);
-        return;
-      }
-
-      if (event.type === 'player') {
-        addPlayer(event.data);
-      }
-    });
-
-    if (errListen) {
-      window.alert('Something went wrong when opening connection');
-      return;
-    }
-
-    closer = close;
-  });
-
-  onCleanup(() => {
-    closer?.();
+        if (event.type === 'player') {
+          addPlayer(event.data);
+        }
+      })
+      .then(([error, close]) => {
+        if (error) {
+          if (!disposed) window.alert('Something went wrong when opening connection');
+        } else if (disposed) close();
+        else closer = close;
+      });
+    return () => {
+      disposed = true;
+      closer?.();
+    };
   });
 
   return (
     <>
-      <Blinker winner={winner} />
-      <div class="relative h-full">
-        <div class="absolute z-30 flex w-full items-center justify-between p-2">
-          <button type="button" on:click={() => modals.open('/settings')} class="cursor-pointer">
+      <Blinker winner={winner()} />
+      <div class="host">
+        <div class="host-nav">
+          <button type="button" onClick={() => open('/settings')} class="cursor-pointer">
             Settings
           </button>
-          <button type="button" on:click={() => modals.open('/rules')} class="cursor-pointer">
+          <button type="button" onClick={() => open('/rules')} class="cursor-pointer">
             Rules
           </button>
         </div>
-        <div class="relative z-20 flex h-full flex-col justify-center gap-y-4">
-          <Timer winner={winner} countdown={countdown} />
+        <div class="host-content">
+          <Timer winner={winner()} countdown={countdown()} />
           <Input addPlayer={addPlayer} />
-          <Join gameId={gameId} />
+          <Join gameId={gameId()} />
           <Scoreboard players={players} removePlayer={removePlayer} />
         </div>
-        <Drawing winner={winner} />
-        <a href="https://github.com/kasperrt/shottimer" class="absolute right-2 bottom-2 z-20 m-auto w-full text-right">
+        <Drawing winner={winner()} />
+        <a href="https://github.com/kasperrt/shottimer" class="source-link">
           GitHub
         </a>
       </div>
+      <Show when={location.state?.modal === '/settings'}>
+        <Settings />
+      </Show>
+      <Show when={location.state?.modal === '/rules'}>
+        <Rules />
+      </Show>
     </>
   );
 }

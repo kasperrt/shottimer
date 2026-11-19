@@ -1,35 +1,26 @@
 import qrcode from 'qrcode';
-import { createEffect, createSignal, Show } from 'solid-js';
-import type { Game } from '@/stores/game';
+import { createMemo, Loading, Show } from 'solid-js';
 
-interface Props {
-  gameId: Game['gameId'];
+function Code(props: { url: string }) {
+  const image = createMemo(() => qrcode.toDataURL(props.url));
+  return <img width="112" height="112" src={image()} alt="Scan to join the game" />;
 }
 
-export function Join({ gameId }: Props) {
-  const [code, setCode] = createSignal<string>('');
-  const joinUrl = () => `${window.location.protocol}//${window.location.host}/${gameId()}`;
-
-  createEffect(async () => {
-    const c = await qrcode.toDataURL(joinUrl());
-    setCode(c);
-  });
-
+export function Join(props: { gameId: string | null }) {
+  const url = () => `${window.location.origin}/${props.gameId}`;
   return (
-    <div class="h-40">
-      <Show when={gameId()}>
-        <div class="flex w-full flex-col items-center justify-center">
-          <div class="text-center">
-            Join{' '}
-            <a href={joinUrl()} target="_blank" rel="noreferrer">
-              {joinUrl()}
-            </a>
-          </div>
-          <div class="size-28">
-            <img src={code()} alt={`Join ${joinUrl()}`} class="size-28" />
-          </div>
-        </div>
-      </Show>
-    </div>
+    <Show when={props.gameId}>
+      <a class="join-link" href={url()} target="_blank" rel="noreferrer">
+        <Loading>
+          <Code url={url()} />
+        </Loading>
+        <span>
+          Join on your phone
+          <small>
+            {window.location.host}/{props.gameId}
+          </small>
+        </span>
+      </a>
+    </Show>
   );
 }
