@@ -55,6 +55,10 @@ export default function Landing() {
           <button type="button" onClick={() => open('/settings')} class="cursor-pointer">
             Settings
           </button>
+          <h1 class="wordmark">
+            <img src="/assets/favicon.png" width="150" height="150" alt="" />
+            ShotTimer
+          </h1>
           <button type="button" onClick={() => open('/rules')} class="cursor-pointer">
             Rules
           </button>
@@ -63,8 +67,8 @@ export default function Landing() {
           <Timer winner={winner()} countdown={countdown()} />
           <Join gameId={gameId()} />
           <Input addPlayer={addPlayer} />
-          <Scoreboard players={players} removePlayer={removePlayer} />
         </div>
+        <Scoreboard players={players} removePlayer={removePlayer} />
         <footer class="host-footer">
           <Show when={players.length === 0}>
             <DancingBeers />

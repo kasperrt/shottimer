@@ -41,26 +41,22 @@ export function Timer(props: { countdown: number | null; winner: DrawnPlayer | n
   );
   return (
     <div class="timer">
-      <Show
-        when={props.countdown}
-        fallback={
-          <h1 class="wordmark">
-            <img src="/assets/favicon.png" width="150" height="150" alt="" />
-            ShotTimer
-          </h1>
-        }
-      >
-        <Show
-          keyed
-          when={visible() && props.winner}
-          fallback={
-            <Show when={settings.timerEnabled()}>
-              <Clock deadline={props.countdown ?? 0} />
-            </Show>
-          }
-        >
-          {(winner) => <Blinker winner={winner} />}
+      <div class="clock" role="timer" aria-label="Round countdown">
+        <Show when={settings.timerEnabled()}>
+          <Show
+            when={props.countdown}
+            fallback={
+              <>
+                00:00<small>.000</small>
+              </>
+            }
+          >
+            <Clock deadline={props.countdown ?? 0} />
+          </Show>
         </Show>
+      </div>
+      <Show keyed when={visible() && props.winner}>
+        {(winner) => <Blinker winner={winner} />}
       </Show>
     </div>
   );

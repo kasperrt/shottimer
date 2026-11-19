@@ -12,7 +12,7 @@ export function Scoreboard(props: Props) {
 
   return (
     <Show when={scoreEnabled() && props.players.length > 0}>
-      <div class="scoreboard">
+      <aside class="scoreboard" aria-label="Scoreboard">
         <h2>Scoreboard</h2>
         <ul>
           <For each={props.players}>
@@ -31,7 +31,7 @@ export function Scoreboard(props: Props) {
             )}
           </For>
         </ul>
-      </div>
+      </aside>
     </Show>
   );
 }
