@@ -1,15 +1,14 @@
 @import 'tailwindcss';
 @import '@fontsource/barlow-condensed/latin-700.css';
+@import '@fontsource/kalam/latin-700.css';
 
 @source '../**/*.{js,ts,jsx,tsx}';
 
 :root {
-  --paper: #fcf4df;
-  --ink: #192f28;
-  --felt: #204c3b;
-  --chalk: #fff4cd;
-  --marker: #ffcd57;
-  --rule: #968c73;
+  --paper: #fff;
+  --ink: #111;
+  --marker: #ffea00;
+  --rule: #999;
   --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   font-family: Arial, sans-serif;
   color: var(--ink);
@@ -20,7 +19,7 @@ select {
   cursor: pointer;
 }
 :focus-visible {
-  outline: 3px solid #b96817;
+  outline: 3px solid #555;
   outline-offset: 3px;
 }
 .host {
@@ -46,17 +45,12 @@ select {
   padding: 0.4rem 0;
 }
 .host-content {
-  background: var(--felt);
-  color: var(--chalk);
-  border: 2px solid var(--ink);
-  outline: 1px solid #93a985;
-  outline-offset: -8px;
-  padding: clamp(2rem, 8vh, 6rem) 1.5rem;
+  padding: 1rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.6rem;
+  gap: clamp(0.7rem, 2vh, 1.4rem);
 }
 .timer,
 .dialog-sheet h2,
@@ -73,18 +67,33 @@ select {
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
-.timer > h1 {
-  text-transform: uppercase;
-  letter-spacing: -0.035em;
-  transform: rotate(-2deg);
+.wordmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Kalam', cursive;
+  font-size: clamp(3.1rem, min(10vw, 12svh), 7rem);
+  line-height: 1;
+  letter-spacing: -0.07em;
+}
+.wordmark img {
+  width: 1.2em;
+  height: 1.2em;
+  object-fit: cover;
+  margin-right: -0.12em;
+}
+.dialog-sheet h2,
+.portrait-header h1,
+.receipt h1 {
+  font-family: 'Kalam', cursive;
 }
 .timer small {
   font-size: 0.5em;
 }
 .add-player {
   display: flex;
-  width: min(100%, 23rem);
-  border-bottom: 1px solid #a7b8a0;
+  width: min(100%, 18rem);
+  border-bottom: 2px solid var(--ink);
 }
 .player-input {
   flex: 1;
@@ -93,15 +102,15 @@ select {
   font-size: 1.15rem;
 }
 .player-input::placeholder {
-  color: #d4dfc8;
+  color: #606060;
 }
 .add-player button {
-  color: var(--marker);
+  color: var(--ink);
   padding-inline: 0.8rem;
   font-size: 1.6rem;
 }
 .scoreboard {
-  width: min(100%, 23rem);
+  width: min(100%, 18rem);
 }
 .scoreboard h2,
 .winner-slip p {
@@ -110,11 +119,11 @@ select {
   letter-spacing: 0.06em;
 }
 .scoreboard h2 {
-  color: var(--marker);
+  color: var(--ink);
   margin-bottom: 0.45rem;
 }
 .scoreboard li {
-  border-top: 1px solid #72927b;
+  border-top: 1px solid var(--rule);
   overflow-wrap: anywhere;
 }
 .host-footer {
@@ -124,13 +133,18 @@ select {
 .join-link {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  flex-direction: column;
+  gap: 0;
+  text-align: center;
+  font-family: 'Kalam', cursive;
+  font-size: 1.65rem;
+  line-height: 1.15;
   font-weight: 700;
   min-width: 0;
 }
 .join-code {
   position: relative;
-  width: 7rem;
+  width: clamp(10.75rem, min(34vw, 31svh), 15.5rem);
   flex: none;
 }
 .join-code img {
@@ -151,7 +165,10 @@ select {
 }
 .join-link small {
   display: block;
-  font-weight: normal;
+  font-family: Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.95rem;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 .source-link {
@@ -169,7 +186,7 @@ select {
   padding: 0.18em 0.3em 0.24em;
   background: var(--marker);
   color: var(--ink);
-  box-shadow: 5px 6px 0 #122f24;
+  box-shadow: 5px 6px 0 var(--ink);
   transform: rotate(-2deg);
 }
 .winner-slip > div {
@@ -219,7 +236,7 @@ select {
   color: var(--ink);
 }
 .game-dialog::backdrop {
-  background: rgb(10 24 17 / 66%);
+  background: rgb(0 0 0 / 66%);
 }
 .game-dialog[data-phase='opening'] {
   animation: sheet-in 210ms ease-out both;
@@ -271,7 +288,6 @@ select {
 }
 .dialog-sheet h2 {
   font-size: 3rem;
-  text-transform: uppercase;
 }
 .dialog-sheet header button {
   width: 2.5rem;
@@ -315,7 +331,6 @@ select {
   padding-inline: 0.35rem;
   border: 1px solid var(--ink);
   font: 700 0.9rem var(--display);
-  text-transform: uppercase;
 }
 .switch-face::before {
   content: '';
@@ -329,15 +344,15 @@ select {
 }
 .switch input:checked + .switch-face {
   justify-content: flex-start;
-  background: var(--felt);
-  color: var(--chalk);
+  background: var(--ink);
+  color: var(--paper);
 }
 .switch input:checked + .switch-face::before {
   transform: translateX(2.4rem);
   background: var(--marker);
 }
 .switch input:focus-visible + .switch-face {
-  outline: 3px solid #b96817;
+  outline: 3px solid #555;
   outline-offset: 3px;
 }
 .setting-row select,
@@ -358,7 +373,7 @@ select {
 }
 .rules-list li::marker {
   font: 700 1.35rem var(--display);
-  color: var(--felt);
+  color: var(--ink);
 }
 .rules-list strong {
   display: block;
@@ -382,10 +397,6 @@ select {
 .join-page {
   min-height: 100svh;
   padding: clamp(1rem, 3vw, 2.5rem);
-}
-.portrait-header h1,
-.receipt h1 {
-  text-transform: uppercase;
 }
 @media (prefers-reduced-motion: reduce) {
   .game-dialog[data-phase],
@@ -439,8 +450,8 @@ select {
   aspect-ratio: 1;
   position: relative;
   outline: 1px solid var(--rule);
-  background: #fffefa;
-  box-shadow: 2px 3px 0 #deded2;
+  background: white;
+  box-shadow: 2px 3px 0 #ddd;
 }
 .paper canvas {
   display: block;
@@ -455,7 +466,7 @@ select {
   display: grid;
   place-items: center;
   pointer-events: none;
-  color: #747669;
+  color: #666;
   font:
     italic clamp(1rem, 5vw, 2rem) Georgia,
     serif;
@@ -489,5 +500,79 @@ select {
   .portrait-space {
     grid-column: 2;
     grid-row: 1 / 3;
+  }
+}
+
+.dancing-beers {
+  display: flex;
+  align-items: end;
+  pointer-events: none;
+}
+.dancing-beers span {
+  width: clamp(2.6rem, 6vw, 5.2rem);
+}
+.dancing-beers span:first-child {
+  transform: scaleX(-1);
+  margin-right: -0.45rem;
+}
+.beer {
+  width: 100%;
+  overflow: visible;
+  transform-origin: 45% 88%;
+  animation: beer-hop 1.8s ease-in-out infinite;
+}
+.dancing-beers span:first-child .beer {
+  animation-delay: -80ms;
+}
+.beer-foot {
+  transform-origin: 32px 67px;
+  animation: heel-click 0.9s ease-in-out infinite alternate;
+}
+.beer-foot.other {
+  animation-direction: alternate-reverse;
+}
+@keyframes beer-hop {
+  0%,
+  58%,
+  100% {
+    transform: translateY(0) rotate(4deg);
+  }
+  22% {
+    transform: translateY(-12%) rotate(-12deg);
+  }
+  42% {
+    transform: translateY(-1%) rotate(-8deg);
+  }
+  78% {
+    transform: translateY(-5%) rotate(8deg);
+  }
+}
+@keyframes heel-click {
+  to {
+    transform: rotate(20deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beer,
+  .beer-foot {
+    animation: none;
+  }
+}
+@media (max-height: 34rem) and (min-width: 38rem) {
+  .host-content {
+    display: grid;
+    grid-template-columns: minmax(0, auto) auto;
+    justify-items: center;
+    align-content: center;
+    column-gap: 2rem;
+  }
+  .host-content .join-link {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+  .host-content .timer,
+  .host-content .add-player,
+  .host-content .scoreboard {
+    grid-column: 1;
   }
 }

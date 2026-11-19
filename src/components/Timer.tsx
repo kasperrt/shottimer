@@ -41,7 +41,15 @@ export function Timer(props: { countdown: number | null; winner: DrawnPlayer | n
   );
   return (
     <div class="timer">
-      <Show when={props.countdown} fallback={<h1>ShotTimer</h1>}>
+      <Show
+        when={props.countdown}
+        fallback={
+          <h1 class="wordmark">
+            <img src="/assets/favicon.png" width="150" height="150" alt="" />
+            ShotTimer
+          </h1>
+        }
+      >
         <Show
           keyed
           when={visible() && props.winner}

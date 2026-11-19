@@ -26,6 +26,9 @@ importers:
       '@fontsource/barlow-condensed':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/kalam':
+        specifier: 5.3.0
+        version: 5.3.0
       '@hono/node-server':
         specifier: 2.1.6
         version: 2.1.6(hono@4.13.16)
@@ -500,6 +503,9 @@ packages:
 
   '@fontsource/barlow-condensed@5.3.0':
     resolution: {integrity: sha512-RA7MmIx0v3eQ6Gcf74qLVLOwLB0GpPOzx+eU9iG/AmCnSJGcIWYeU8y6CEMGZ210MGwGg5CZhzLkkvyZdTTk1g==}
+
+  '@fontsource/kalam@5.3.0':
+    resolution: {integrity: sha512-FDkVoDfPDCSN/eO81FOYtUI67eMgpVBJmjBtAqSL0PmEhJyeFY2biC+CR+yEttksgXR9+swpFdYmQTyjwBq80Q==}
 
   '@hono/node-server@2.1.6':
     resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
@@ -2151,6 +2157,8 @@ snapshots:
   '@exodus/bytes@1.15.0': {}
 
   '@fontsource/barlow-condensed@5.3.0': {}
+
+  '@fontsource/kalam@5.3.0': {}
 
   '@hono/node-server@2.1.6(hono@4.13.16)':
     dependencies:

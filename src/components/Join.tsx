@@ -7,12 +7,12 @@ function Code(props: { url: string }) {
       errorCorrectionLevel: 'H',
       margin: 4,
       scale: 8,
-      color: { dark: '#192f28', light: '#00000000' },
+      color: { dark: '#111111', light: '#00000000' },
     }),
   );
   return (
     <span class="join-code">
-      <img width="112" height="112" src={image()} alt="Scan to join the game" />
+      <img width="224" height="224" src={image()} alt="Scan to join the game" />
       <svg class="join-code-logo" viewBox="-8 0 124 146" aria-hidden="true">
         <image href="/assets/favicon.png" width="150" height="150" />
       </svg>
@@ -29,7 +29,7 @@ export function Join(props: { gameId: string | null }) {
           <Code url={url()} />
         </Loading>
         <span>
-          Join on your phone
+          Scan to join
           <small>
             {window.location.host}/{props.gameId}
           </small>
