@@ -2,8 +2,22 @@ import qrcode from 'qrcode';
 import { createMemo, Loading, Show } from 'solid-js';
 
 function Code(props: { url: string }) {
-  const image = createMemo(() => qrcode.toDataURL(props.url));
-  return <img width="112" height="112" src={image()} alt="Scan to join the game" />;
+  const image = createMemo(() =>
+    qrcode.toDataURL(props.url, {
+      errorCorrectionLevel: 'H',
+      margin: 4,
+      scale: 8,
+      color: { dark: '#192f28', light: '#00000000' },
+    }),
+  );
+  return (
+    <span class="join-code">
+      <img width="112" height="112" src={image()} alt="Scan to join the game" />
+      <svg class="join-code-logo" viewBox="-8 0 124 146" aria-hidden="true">
+        <image href="/assets/favicon.png" width="150" height="150" />
+      </svg>
+    </span>
+  );
 }
 
 export function Join(props: { gameId: string | null }) {

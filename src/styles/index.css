@@ -128,9 +128,26 @@ select {
   font-weight: 700;
   min-width: 0;
 }
-.join-link img {
-  width: 4.25rem;
-  height: auto;
+.join-code {
+  position: relative;
+  width: 7rem;
+  flex: none;
+}
+.join-code img {
+  display: block;
+  width: 100%;
+  image-rendering: pixelated;
+}
+.join-code-logo {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 18%;
+  height: 18%;
+  background: var(--paper);
+}
+.join-code-logo image {
+  mix-blend-mode: multiply;
 }
 .join-link small {
   display: block;
