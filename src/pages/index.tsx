@@ -1,9 +1,8 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { onSettled, Show } from 'solid-js';
-import { Blinker } from '@/components/Blinker';
-import { Drawing } from '@/components/Drawing';
+import { onSettled } from 'solid-js';
 import { Input } from '@/components/Input';
 import { Join } from '@/components/Join';
+import { Modal } from '@/components/Modal';
 import { Scoreboard } from '@/components/Scoreboard';
 import { Timer } from '@/components/Timer';
 import { httpClient } from '@/lib/http';
@@ -15,6 +14,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const location = useLocation<{ modal?: string }>();
   const open = (modal: string) => navigate(location.pathname, { state: { modal } });
+  const close = () => navigate(location.pathname, { replace: true, state: {} });
   const { gameId, setGameId, countdown, winner, players, addPlayer, removePlayer } = useGame();
   onSettled(() => {
     let disposed = false;
@@ -49,7 +49,6 @@ export default function Landing() {
 
   return (
     <>
-      <Blinker winner={winner()} />
       <div class="host">
         <div class="host-nav">
           <button type="button" onClick={() => open('/settings')} class="cursor-pointer">
@@ -62,20 +61,21 @@ export default function Landing() {
         <div class="host-content">
           <Timer winner={winner()} countdown={countdown()} />
           <Input addPlayer={addPlayer} />
-          <Join gameId={gameId()} />
           <Scoreboard players={players} removePlayer={removePlayer} />
         </div>
-        <Drawing winner={winner()} />
-        <a href="https://github.com/kasperrt/shottimer" class="source-link">
-          GitHub
-        </a>
+        <footer class="host-footer">
+          <Join gameId={gameId()} />
+          <a href="https://github.com/kasperrt/shottimer" class="source-link">
+            GitHub
+          </a>
+        </footer>
       </div>
-      <Show when={location.state?.modal === '/settings'}>
+      <Modal title="Settings" open={location.state?.modal === '/settings'} onClose={close}>
         <Settings />
-      </Show>
-      <Show when={location.state?.modal === '/rules'}>
+      </Modal>
+      <Modal title="Rules" open={location.state?.modal === '/rules'} onClose={close}>
         <Rules />
-      </Show>
+      </Modal>
     </>
   );
 }

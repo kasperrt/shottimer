@@ -2,6 +2,7 @@ import { createEffect, createMemo, createSignal, Show } from 'solid-js';
 import { settings } from '@/stores/settings';
 import type { DrawnPlayer } from '@/types/types';
 import { getRemainingTimeReadable } from '@/utils/getRemainingTimeReadable';
+import { Blinker } from './Blinker';
 
 function Clock(props: { deadline: number }) {
   const [remaining, setRemaining] = createSignal(0);
@@ -34,24 +35,25 @@ export function Timer(props: { countdown: number | null; winner: DrawnPlayer | n
     (winner) => {
       setVisible(!!winner);
       if (!winner) return;
-      const timeout = setTimeout(() => setVisible(false), 2000);
+      const timeout = setTimeout(() => setVisible(false), 3600);
       return () => clearTimeout(timeout);
     },
   );
   return (
-    <h1 class="timer">
-      <Show when={props.countdown} fallback="ShotTimer">
+    <div class="timer">
+      <Show when={props.countdown} fallback={<h1>ShotTimer</h1>}>
         <Show
-          when={visible()}
+          keyed
+          when={visible() && props.winner}
           fallback={
             <Show when={settings.timerEnabled()}>
               <Clock deadline={props.countdown ?? 0} />
             </Show>
           }
         >
-          {props.winner?.name}
+          {(winner) => <Blinker winner={winner} />}
         </Show>
       </Show>
-    </h1>
+    </div>
   );
 }

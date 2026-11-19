@@ -12,9 +12,8 @@ export function Scoreboard(props: Props) {
 
   return (
     <Show when={scoreEnabled() && props.players.length > 0}>
-      <div class="top-20 left-20 w-full px-8 lg:absolute lg:max-w-48 lg:px-0">
-        <h2>Score</h2>
-        <hr />
+      <div class="scoreboard">
+        <h2>Scoreboard</h2>
         <ul>
           <For each={props.players}>
             {(player) => (

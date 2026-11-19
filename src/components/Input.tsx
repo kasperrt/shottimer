@@ -27,7 +27,7 @@ export function Input(props: Props) {
   };
 
   return (
-    <form onSubmit={onSubmit} class="text-center">
+    <form onSubmit={onSubmit} class="add-player">
       <input
         name="Name"
         onInput={onChange}
@@ -36,6 +36,9 @@ export function Input(props: Props) {
         placeholder="Add a player…"
         class="player-input"
       />
+      <button type="submit" aria-label="Add player">
+        ↵
+      </button>
     </form>
   );
 }

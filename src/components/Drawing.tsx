@@ -4,7 +4,7 @@ import { draw } from '@/utils/draw';
 
 export function Drawing(props: { winner: DrawnPlayer | null }) {
   return (
-    <Show keyed when={props.winner?.drawing}>
+    <Show keyed when={props.winner?.drawing?.x.length ? props.winner.drawing : undefined}>
       {(portrait) => (
         <div class="winner-portrait">
           <canvas

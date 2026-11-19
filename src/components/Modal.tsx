@@ -1,37 +1,53 @@
-import { useLocation, useNavigate } from '@solidjs/router';
 import type { JSX } from '@solidjs/web';
+import { createEffect } from 'solid-js';
 
 interface Props {
-  children?: JSX.Element;
+  title: string;
+  open: boolean;
+  onClose: () => void;
+  children: JSX.Element;
 }
 
 export function Modal(props: Props) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const onClose = () => navigate(location.pathname, { replace: true, state: {} });
+  let dialog!: HTMLDialogElement;
+  createEffect(
+    () => props.open,
+    (open) => {
+      if (open) {
+        dialog.dataset.phase = 'opening';
+        if (!dialog.open) dialog.showModal();
+      } else if (dialog.open) {
+        dialog.dataset.phase = 'closing';
+      }
+    },
+  );
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close modal"
-        class="fixed inset-0 z-40 h-full w-full bg-black/40"
-        onClick={onClose}
-      />
-      <div class="fixed top-0 right-0 left-0 z-50 m-auto h-fit max-h-dvh min-h-screen w-full max-w-xl min-w-full overflow-auto rounded-none bg-white p-8 lg:bottom-0 lg:min-h-[unset] lg:min-w-[unset] lg:rounded-xl">
-        <button type="button" onClick={onClose} aria-label="Close" class="absolute top-5 right-5 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
-            <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
-              d="M5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289Z"
-              fill="#0F1729"
-            />
-          </svg>
-        </button>
+    // biome-ignore lint/a11y/useKeyWithClickEvents: native dialog cancel handles Escape for backdrop dismissal.
+    <dialog
+      ref={dialog}
+      class="game-dialog"
+      aria-label={props.title}
+      onCancel={(event) => {
+        event.preventDefault();
+        props.onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === dialog) props.onClose();
+      }}
+      onAnimationEnd={(event) => {
+        if (event.target === dialog && event.animationName === 'sheet-out' && !props.open) dialog.close();
+      }}
+    >
+      <section class="dialog-sheet">
+        <header>
+          <h2>{props.title}</h2>
+          <button type="button" onClick={() => props.onClose()} aria-label="Close">
+            ×
+          </button>
+        </header>
         {props.children}
-      </div>
-    </>
+      </section>
+    </dialog>
   );
 }

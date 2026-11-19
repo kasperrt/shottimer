@@ -1,163 +1,387 @@
 @import 'tailwindcss';
+@import '@fontsource/barlow-condensed/latin-700.css';
 
 @source '../**/*.{js,ts,jsx,tsx}';
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+:root {
+  --paper: #fcf4df;
+  --ink: #192f28;
+  --felt: #204c3b;
+  --chalk: #fff4cd;
+  --marker: #ffcd57;
+  --rule: #968c73;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  font-family: Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+button,
+select {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 3px solid #b96817;
+  outline-offset: 3px;
+}
+.host {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 0.9rem clamp(1rem, 4vw, 4rem);
+}
+.host-nav,
+.host-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.host-nav {
+  padding-bottom: 0.75rem;
+}
+.host-nav button,
+.source-link {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  padding: 0.4rem 0;
+}
+.host-content {
+  background: var(--felt);
+  color: var(--chalk);
+  border: 2px solid var(--ink);
+  outline: 1px solid #93a985;
+  outline-offset: -8px;
+  padding: clamp(2rem, 8vh, 6rem) 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+}
+.timer,
+.dialog-sheet h2,
+.portrait-header h1,
+.receipt h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  line-height: 0.95;
+}
+.timer {
+  font-size: clamp(3.2rem, 15vw, 12.5rem);
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.timer > h1 {
+  text-transform: uppercase;
+  letter-spacing: -0.035em;
+  transform: rotate(-2deg);
+}
+.timer small {
+  font-size: 0.5em;
+}
+.add-player {
+  display: flex;
+  width: min(100%, 23rem);
+  border-bottom: 1px solid #a7b8a0;
+}
+.player-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0;
+  font-size: 1.15rem;
+}
+.player-input::placeholder {
+  color: #d4dfc8;
+}
+.add-player button {
+  color: var(--marker);
+  padding-inline: 0.8rem;
+  font-size: 1.6rem;
+}
+.scoreboard {
+  width: min(100%, 23rem);
+}
+.scoreboard h2,
+.winner-slip p {
+  font: 700 1.125rem / 1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.scoreboard h2 {
+  color: var(--marker);
+  margin-bottom: 0.45rem;
+}
+.scoreboard li {
+  border-top: 1px solid #72927b;
+  overflow-wrap: anywhere;
+}
+.host-footer {
+  padding-top: 0.85rem;
+  gap: 1rem;
+}
+.join-link {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 700;
+  min-width: 0;
+}
+.join-link img {
+  width: 4.25rem;
+  height: auto;
+}
+.join-link small {
+  display: block;
+  font-weight: normal;
+  overflow-wrap: anywhere;
+}
+.source-link {
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+.winner-call {
+  padding: 0.5rem;
+}
+.winner-slip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.6rem, 2vw, 2rem);
+  padding: 0.18em 0.3em 0.24em;
+  background: var(--marker);
+  color: var(--ink);
+  box-shadow: 5px 6px 0 #122f24;
+  transform: rotate(-2deg);
+}
+.winner-slip > div {
+  min-width: 0;
+}
+.winner-slip h1 {
+  font-size: clamp(3rem, 12vw, 10rem);
+}
+.winner-slip p {
+  margin-bottom: 0.4rem;
+}
+.winner-portrait {
+  width: clamp(3.5rem, 14vw, 12rem);
+  flex-shrink: 0;
+}
+.winner-portrait canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: var(--paper);
+}
+.winner-call[data-animate='true'] .winner-slip {
+  animation: stamp-in 360ms cubic-bezier(0.18, 0.78, 0.24, 1.12) both;
+}
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.3em) rotate(-8deg) scale(1.12);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(0.025em) rotate(-1deg) scale(0.98);
+  }
+  to {
+    transform: rotate(-2deg);
   }
 }
 
-html,
-body,
-#app {
+.game-dialog {
+  margin: auto;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  width: min(29rem, calc(100vw - 2rem));
+  max-height: none;
+  background: transparent;
+  color: var(--ink);
+}
+.game-dialog::backdrop {
+  background: rgb(10 24 17 / 66%);
+}
+.game-dialog[data-phase='opening'] {
+  animation: sheet-in 210ms ease-out both;
+}
+.game-dialog[data-phase='closing'] {
+  animation: sheet-out 160ms ease-in both;
+}
+.game-dialog[data-phase='opening']::backdrop {
+  animation: shade-in 210ms both;
+}
+.game-dialog[data-phase='closing']::backdrop {
+  animation: shade-in 160ms reverse both;
+}
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.4rem) rotate(-1deg);
+  }
+}
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(0.9rem) rotate(0.5deg);
+  }
+}
+@keyframes shade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.dialog-sheet {
+  background: var(--paper);
+  padding: clamp(1.2rem, 4vw, 2rem);
+  border: 2px solid var(--ink);
+  box-shadow: 5px 5px 0 var(--ink);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dialog-sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  border-bottom: 3px double var(--ink);
+}
+.dialog-sheet h2 {
+  font-size: 3rem;
+  text-transform: uppercase;
+}
+.dialog-sheet header button {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 2rem;
+  line-height: 1;
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 3.55rem;
+  gap: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.setting-row:last-child {
+  border: 0;
+}
+.switch-row,
+.switch input {
+  cursor: pointer;
+}
+.switch {
+  position: relative;
+}
+.switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
   height: 100%;
 }
-
-:root {
-  font-family: system-ui, sans-serif;
-  color: #272920;
-  background: #f7f5ee;
-  --rule: #bdbdae;
-  --ink: #273e32;
+.switch-face {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  width: 4rem;
+  height: 1.65rem;
+  padding-inline: 0.35rem;
+  border: 1px solid var(--ink);
+  font: 700 0.9rem var(--display);
+  text-transform: uppercase;
 }
-
-.host,
+.switch-face::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 1.1rem;
+  background: var(--ink);
+  transition: transform 140ms;
+}
+.switch input:checked + .switch-face {
+  justify-content: flex-start;
+  background: var(--felt);
+  color: var(--chalk);
+}
+.switch input:checked + .switch-face::before {
+  transform: translateX(2.4rem);
+  background: var(--marker);
+}
+.switch input:focus-visible + .switch-face {
+  outline: 3px solid #b96817;
+  outline-offset: 3px;
+}
+.setting-row select,
+.setting-row input[type='number'] {
+  border-bottom: 1px solid var(--ink);
+  padding: 0.2rem;
+  width: 7.5rem;
+  font-size: 1rem;
+}
+.rules-list {
+  list-style: decimal;
+  padding-left: 1.7rem;
+}
+.rules-list li {
+  margin-block: 1rem;
+  padding-left: 0.35rem;
+  line-height: 1.4;
+}
+.rules-list li::marker {
+  font: 700 1.35rem var(--display);
+  color: var(--felt);
+}
+.rules-list strong {
+  display: block;
+}
+.mode-notes {
+  border-block: 1px solid var(--rule);
+  padding-block: 0.7rem;
+}
+.mode-notes div {
+  display: grid;
+  grid-template-columns: 4.4rem 1fr;
+  margin-block: 0.25rem;
+}
+.mode-notes dt {
+  font-weight: bold;
+}
+.leaving {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
 .join-page {
   min-height: 100svh;
   padding: clamp(1rem, 3vw, 2.5rem);
 }
-
-.host {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.host-nav,
-.source-link,
-.host-content {
-  position: relative;
-  z-index: 20;
-}
-.host-nav {
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 0.75rem;
-}
-.host-nav button:hover,
-.source-link:hover {
-  text-decoration: underline;
-}
-.host-content {
-  margin-block: auto;
-  display: grid;
-  justify-items: center;
-  gap: clamp(1.25rem, 4vh, 3rem);
-  padding: 2rem 0;
-}
-.host-content form {
-  width: min(100%, 30rem);
-}
-.timer,
 .portrait-header h1,
 .receipt h1 {
-  font-family: Georgia, serif;
-  line-height: 1;
-  letter-spacing: -0.055em;
-}
-.timer {
-  text-align: center;
-  font-size: clamp(3rem, 11vw, 9rem);
-  font-variant-numeric: lining-nums tabular-nums;
-  overflow-wrap: anywhere;
-}
-.timer small {
-  font-size: 0.62em;
-}
-.player-input {
-  width: 100%;
-  border-bottom: 1px solid var(--rule);
-  padding: 0.6rem;
-  text-align: center;
-  font-size: 1.35rem;
-}
-.join-link {
-  display: inline-flex;
-  max-width: 100%;
-  align-items: center;
-  gap: 1rem;
-  font-weight: 600;
-}
-.join-link img {
-  width: 5.5rem;
-}
-.join-link small {
-  display: block;
-  overflow-wrap: anywhere;
-  font-weight: normal;
-}
-.source-link {
-  align-self: flex-end;
-  font-size: 0.85rem;
-}
-.winner-portrait,
-.blinker {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-}
-.winner-portrait {
-  opacity: 0.5;
-}
-.winner-portrait canvas {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.blinker {
-  animation: flash 0.7s steps(1) 6;
-}
-@keyframes flash {
-  0%,
-  85% {
-    background: red;
-  }
-  14% {
-    background: blue;
-  }
-  28% {
-    background: purple;
-  }
-  42% {
-    background: yellow;
-  }
-  57% {
-    background: green;
-  }
-  72% {
-    background: transparent;
-  }
+  text-transform: uppercase;
 }
 @media (prefers-reduced-motion: reduce) {
-  .blinker {
+  .game-dialog[data-phase],
+  .game-dialog[data-phase]::backdrop {
+    animation-duration: 1ms;
+  }
+  .winner-call[data-animate='true'] .winner-slip {
     animation: none;
   }
+  .switch-face::before {
+    transition: none;
+  }
 }
-
 .join-page {
   display: grid;
   place-items: center;
