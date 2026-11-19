@@ -53,6 +53,8 @@ export function createGameRoutes(
   const starts = new MinuteBudget(240, 60);
   const joins = new MinuteBudget(1200, 300);
   let pendingJoins = 0;
+  const invalidRemovals = new MinuteBudget(1200, 120);
+  const hostRemovals = new MinuteBudget(256 * 120, 120);
   const roomRequests = new MinuteBudget(1200, 120);
   const routes = new Hono<GameEnv & { Variables: { room: Room } }>();
 
@@ -98,20 +100,15 @@ export function createGameRoutes(
     });
   });
 
-  routes.use('/join/:id', async (ctx, next) => {
-    if (!joins.take(peer(ctx, trustIngress))) return throttled(ctx);
-    const id = ctx.req.param('id');
-    const room = rooms.get(id);
-    if (!room || room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
-    if (!roomRequests.take(id)) return throttled(ctx);
-    ctx.set('room', room);
-    await next();
-  });
-
   routes.post(
     '/join/:id',
     async (ctx, next) => {
-      const room = ctx.get('room');
+      if (!joins.take(peer(ctx, trustIngress))) return throttled(ctx);
+      const id = ctx.req.param('id');
+      const room = rooms.get(id);
+      if (!room || room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
+      if (!roomRequests.take(id)) return throttled(ctx);
+      ctx.set('room', room);
       if (room.players.size >= maxRemotePlayers) return ctx.text('Game full.', 409);
       if (room.pending >= 12 || pendingJoins >= 32) return throttled(ctx);
       room.pending++;
@@ -148,11 +145,23 @@ export function createGameRoutes(
   );
 
   routes.delete('/join/:id', (ctx) => {
+    const id = ctx.req.param('id');
+    const room = rooms.get(id);
     const credential = ctx.req.header('Authorization') ?? '';
-    if (!credential.startsWith('Bearer ') || !ctx.get('room').players.delete(credential.slice(7))) {
+    const playerId = credential.slice(7);
+    if (
+      !room ||
+      room.closed.signal.aborted ||
+      room.stream.aborted ||
+      !credential.startsWith('Bearer ') ||
+      !room.players.has(playerId)
+    ) {
+      if (!invalidRemovals.take(peer(ctx, trustIngress))) return throttled(ctx);
       return ctx.text('Unknown player.', 404);
     }
-    ctx.get('room').touch();
+    if (!hostRemovals.take(id)) return throttled(ctx);
+    room.players.delete(playerId);
+    room.touch();
     return ctx.body(null, 204);
   });
   return routes;

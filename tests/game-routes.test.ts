@@ -190,3 +190,47 @@ describe('room lifetimes and isolation', () => {
     await (await openRoom(app)).close();
   });
 });
+
+describe('quota boundaries', () => {
+  it('keeps host moderation available after guest and invalid-credential budgets are exhausted', async () => {
+    const app = createGameRoutes();
+    const room = await openRoom(app);
+    const remove = (id: string) =>
+      app.request(`/join/${room.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${id}` } });
+    try {
+      expect((await join(app, room.id)).status).toBe(204);
+      const player = await room.readEvent();
+      for (let i = 1; i < 120; i++) expect((await join(app, room.id, '{}')).status).toBe(400);
+      expect((await join(app, room.id)).status).toBe(429);
+      for (let i = 0; i < 120; i++) expect((await remove('invalid')).status).toBe(404);
+      expect((await remove('invalid')).status).toBe(429);
+      expect((await remove(player.id)).status).toBe(204);
+      expect((await remove(player.id)).status).toBe(429);
+    } finally {
+      await room.close();
+    }
+  });
+
+  it.each([
+    ['2001:db8::1', '2001:0DB8:0000:0000:ffff::a', '2001:db8:0:1::1'],
+    ['192.0.2.1', '::ffff:c000:201', '::ffff:192.0.2.2'],
+  ])('groups equivalent client networks for %s', async (first, same, other) => {
+    const app = createGameRoutes(undefined, { trustIngress: true, roomsPerPeer: 1 });
+    const open = (ip: string) =>
+      app.request(
+        '/rtd',
+        { headers: { 'X-Forwarded-For': ip } },
+        { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
+      );
+    const room = await open(first);
+    try {
+      expect(room.status).toBe(200);
+      expect((await open(same)).status).toBe(429);
+      const separate = await open(other);
+      expect(separate.status).toBe(200);
+      await separate.body?.cancel();
+    } finally {
+      await room.body?.cancel();
+    }
+  });
+});

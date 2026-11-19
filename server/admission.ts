@@ -1,6 +1,7 @@
 import { isIP } from 'node:net';
 import type { HttpBindings } from '@hono/node-server';
 import type { Context } from 'hono';
+import ipaddr from 'ipaddr.js';
 
 export type GameEnv = { Bindings: HttpBindings };
 
@@ -9,7 +10,10 @@ export function peer<E extends GameEnv>(ctx: Context<E>, trustIngress: boolean) 
   // Enable only on a listener restricted to the single trusted ingress hop.
   const lastHop = trustIngress && socket && ctx.req.header('X-Forwarded-For')?.split(',').at(-1)?.trim();
   const address = lastHop && isIP(lastHop) ? lastHop : socket;
-  return address?.replace(/^::ffff:(?=\d+\.)/i, '') ?? 'local';
+  if (!address) return 'local';
+  const ip = ipaddr.process(address.split('%')[0]);
+  if (ip.kind() === 'ipv4') return ip.toString();
+  return Buffer.from(ip.toByteArray().slice(0, 8)).toString('hex');
 }
 
 const maxBytes = 192 * 1024;
