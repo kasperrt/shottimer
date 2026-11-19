@@ -7,8 +7,7 @@ import dotenv from 'dotenv';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import client from 'prom-client';
-import { joinHandler } from './handlers/join.js';
-import { sseHandler } from './handlers/sse.js';
+import { createGameRoutes } from './game-routes.js';
 
 dotenv.config({ quiet: true });
 
@@ -69,8 +68,7 @@ app.use(
   }),
 );
 
-app.post('/join/:id', joinHandler);
-app.get('/rtd', sseHandler);
+app.route('/', createGameRoutes());
 
 const distDir = join(process.cwd(), 'dist');
 const distIndex = join(distDir, 'index.html');

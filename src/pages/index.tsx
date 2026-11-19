@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { createEffect, createSignal, onSettled } from 'solid-js';
+import { createEffect, createSignal, onCleanup, onSettled } from 'solid-js';
+import { getHttpError } from 'wiretyped';
 import { DancingBeers } from '@/components/DancingBeers';
 import { Input } from '@/components/Input';
 import { Join } from '@/components/Join';
@@ -8,7 +9,7 @@ import { Scoreboard } from '@/components/Scoreboard';
 import { Timer } from '@/components/Timer';
 import { httpClient } from '@/lib/http';
 import { useGame } from '@/stores/game';
-import type { DrawnPlayer } from '@/types/types';
+import { type DrawnPlayer, maxLocalPlayers } from '@/types/types';
 import Rules from './+rules';
 import Settings from './+settings';
 
@@ -18,6 +19,27 @@ export default function Landing() {
   const open = (modal: string) => navigate(location.pathname, { state: { modal } });
   const close = () => navigate(location.pathname, { replace: true, state: {} });
   const { gameId, setGameId, countdown, winner, players, addPlayer, removePlayer } = useGame();
+  const removal = new AbortController();
+  onCleanup(() => removal.abort());
+  async function leave(id: string) {
+    const room = gameId();
+    if (room && players.find((player) => player.id === id)?.drawing) {
+      const [error] = await httpClient.delete(
+        '/join/{id}',
+        { id: room },
+        {
+          headers: { Authorization: `Bearer ${id}` },
+          signal: removal.signal,
+        },
+      );
+      if (removal.signal.aborted) return;
+      if (error && getHttpError(error)?.response.status !== 404) {
+        window.alert('Could not remove this player. Please try again.');
+        return;
+      }
+    }
+    removePlayer(id);
+  }
   const [carried, setCarried] = createSignal<DrawnPlayer | null>(null);
   const revealMs = 3600;
   const announcing = () => (winner() !== carried() ? winner() : null);
@@ -76,9 +98,9 @@ export default function Landing() {
         <div class="host-content">
           <Timer winner={announcing()} countdown={countdown()} />
           <Join gameId={gameId()} />
-          <Input addPlayer={addPlayer} />
+          <Input addPlayer={addPlayer} full={players.filter((player) => !player.drawing).length >= maxLocalPlayers} />
         </div>
-        <Scoreboard players={players} removePlayer={removePlayer} />
+        <Scoreboard players={players} removePlayer={leave} />
         <footer class="host-footer">
           <DancingBeers
             playing={players.length > 0}

@@ -1,6 +1,8 @@
 import { useParams } from '@solidjs/router';
 import { createSignal, Show } from 'solid-js';
+import { getHttpError } from 'wiretyped';
 import { httpClient } from '@/lib/http';
+import { maxDrawingPoints, maxNameLength } from '@/types/types';
 import { getRandomColor } from '@/utils/color';
 import { draw } from '@/utils/draw';
 
@@ -24,9 +26,13 @@ export default function JoinGame() {
   let pointer: number | null = null;
 
   function mark(canvas: HTMLCanvasElement, event: PointerEvent, drag: boolean) {
+    if (portrait.x.length >= maxDrawingPoints) {
+      setError('Your portrait is full. You can still join with this drawing.');
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
-    portrait.x.push(((event.clientX - rect.left) * side) / rect.width);
-    portrait.y.push(((event.clientY - rect.top) * side) / rect.height);
+    portrait.x.push(Math.max(0, Math.min(side, Math.round(((event.clientX - rect.left) * side) / rect.width))));
+    portrait.y.push(Math.max(0, Math.min(side, Math.round(((event.clientY - rect.top) * side) / rect.height))));
     portrait.drag.push(drag);
     draw({ canvas, ...portrait });
   }
@@ -44,8 +50,13 @@ export default function JoinGame() {
       );
       if (failure) throw failure;
       setStatus('joined');
-    } catch {
-      setError('Couldn’t join the game. Try again.');
+    } catch (error) {
+      const messages: Partial<Record<number, string>> = {
+        404: 'This game has closed. Scan the host’s current code.',
+        409: 'This game is full. Ask the host to remove a player.',
+        429: 'Too many requests. Try again in a minute.',
+      };
+      setError(messages[getHttpError(error)?.response.status ?? 0] ?? 'Couldn’t join the game. Try again.');
       setStatus('editing');
     }
   }
@@ -72,6 +83,7 @@ export default function JoinGame() {
               autocorrect="off"
               autocapitalize="none"
               spellcheck={false}
+              maxlength={maxNameLength}
               required
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}
