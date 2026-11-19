@@ -4,6 +4,7 @@ import { playerSchema, simplePlayerSchema } from '@/types/types';
 
 const endpoints = {
   '/join/{id}': {
+    delete: { response: z.null() },
     post: {
       response: z.null(),
       request: simplePlayerSchema,
