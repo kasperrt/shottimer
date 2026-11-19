@@ -573,6 +573,7 @@ select {
 .beer-floor {
   --mug: clamp(2.6rem, 6vw, 5.2rem);
   position: relative;
+  isolation: isolate;
   flex: 1;
   min-width: 0;
   height: calc(var(--mug) * 92 / 78);
@@ -582,7 +583,8 @@ select {
   width: var(--mug);
   position: absolute;
   bottom: 0;
-  transform: translateX(var(--travel, 0px));
+  transform-origin: bottom center;
+  transform: translate(var(--travel, 0px), calc(-1 * var(--depth, 0px))) scale(var(--scale, 1));
 }
 .beer-actor:nth-child(2) {
   left: var(--mug);

@@ -15,7 +15,10 @@ export function walkBeer(actor: HTMLDivElement, lane: number) {
   const feet = actor.querySelectorAll<SVGPathElement>('.beer-foot');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let x = actor.offsetLeft + (Number.parseFloat(actor.style.getPropertyValue('--travel')) || 0);
-  let target = x;
+  // Depth is measured in floor pixels. The front edge is zero.
+  let depth = Number.parseFloat(actor.style.getPropertyValue('--depth')) || 0;
+  let targetX = x;
+  let targetDepth = depth;
   let phase = lane / 2;
   let speed = 56;
   let previous = 0;
@@ -27,7 +30,8 @@ export function walkBeer(actor: HTMLDivElement, lane: number) {
     width = actor.offsetWidth;
     floorWidth = floor.clientWidth;
     origin = actor.offsetLeft;
-    target = x;
+    targetX = x;
+    targetDepth = depth;
   });
   resize.observe(floor);
   resize.observe(actor);
@@ -37,21 +41,33 @@ export function walkBeer(actor: HTMLDivElement, lane: number) {
     previous = now;
     const room = Math.max(0, floorWidth - width);
     x = Math.min(room, Math.max(0, x));
-    if (Math.abs(target - x) < 1 || target > room) {
+    const farEdge = width * 0.85;
+    depth = Math.min(depth, farEdge);
+    if (Math.hypot(targetX - x, targetDepth - depth) < 1 || targetX > room || targetDepth > farEdge) {
       // Separate home ranges let the mugs wander independently.
       const middle = room * 0.5;
       const low = lane === 0 ? 0 : Math.min(room, middle + width / 2);
       const high = lane === 0 ? Math.max(0, middle - width / 2) : room;
       const midpoint = (low + high) / 2;
-      target = x <= midpoint ? midpoint + Math.random() * (high - midpoint) : low + Math.random() * (midpoint - low);
+      targetX = x <= midpoint ? midpoint + Math.random() * (high - midpoint) : low + Math.random() * (midpoint - low);
+      targetDepth = depth < farEdge / 2 ? farEdge * (0.55 + Math.random() * 0.45) : Math.random() * farEdge * 0.45;
       speed = width * (0.55 + Math.random() * 0.42);
     }
-    const direction = target >= x ? 1 : -1;
-    const travel = Math.min(Math.abs(target - x), speed * dt);
-    x += direction * travel;
-    phase = (phase + (travel * 78) / Math.max(1, width) / 32) % 1;
+    const dx = targetX - x;
+    const dz = targetDepth - depth;
+    // Foreshorten the floor axis so a step into the distance covers less screen space.
+    const distance = Math.hypot(dx, dz * 1.7);
+    const scale = 1 - (0.32 * depth) / Math.max(1, farEdge);
+    const travel = Math.min(distance, speed * scale * dt);
+    const fraction = travel / Math.max(distance, 0.001);
+    x += dx * fraction;
+    depth += dz * fraction;
+    phase = (phase + (travel * 78) / Math.max(1, width * scale) / 32) % 1;
     actor.style.setProperty('--travel', `${x - origin}px`);
-    actor.style.setProperty('--facing', String(direction));
+    actor.style.setProperty('--depth', `${depth}px`);
+    actor.style.setProperty('--scale', String(scale));
+    actor.style.zIndex = String(100 - Math.round(depth));
+    if (Math.abs(dx) > 1) actor.style.setProperty('--facing', String(Math.sign(dx)));
     actor.style.setProperty('--bob', `${-Math.abs(Math.sin(phase * Math.PI * 2)) * 2}px`);
     feet[0].setAttribute('d', leg(24, phase));
     feet[1].setAttribute('d', leg(40, (phase + 0.5) % 1));
