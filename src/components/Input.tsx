@@ -27,9 +27,13 @@ export function Input(props: Props) {
   };
 
   return (
-    <form onSubmit={onSubmit} class="add-player">
+    <form autocomplete="off" onSubmit={onSubmit} class="add-player">
       <input
         name="Name"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="none"
+        spellcheck={false}
         onInput={onChange}
         value={name()}
         aria-label="Player name"

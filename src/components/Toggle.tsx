@@ -9,7 +9,13 @@ export function Toggle(props: Props) {
     <label class="setting-row switch-row">
       <span>{props.label}</span>
       <span class="switch">
-        <input aria-label={props.label} type="checkbox" checked={props.checked} onChange={() => props.onChange()} />
+        <input
+          autocomplete="off"
+          aria-label={props.label}
+          type="checkbox"
+          checked={props.checked}
+          onChange={() => props.onChange()}
+        />
         <span aria-hidden="true" class="switch-face">
           {props.checked ? 'On' : 'Off'}
         </span>

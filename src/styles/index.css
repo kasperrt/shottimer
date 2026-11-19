@@ -264,29 +264,11 @@ select {
 .game-dialog::backdrop {
   background: rgb(0 0 0 / 66%);
 }
-.game-dialog[data-phase='opening'] {
-  animation: sheet-in 210ms ease-out both;
-}
-.game-dialog[data-phase='closing'] {
-  animation: sheet-out 160ms ease-in both;
-}
 .game-dialog[data-phase='opening']::backdrop {
   animation: shade-in 210ms both;
 }
 .game-dialog[data-phase='closing']::backdrop {
   animation: shade-in 160ms reverse both;
-}
-@keyframes sheet-in {
-  from {
-    opacity: 0;
-    transform: translateY(1.4rem) rotate(-1deg);
-  }
-}
-@keyframes sheet-out {
-  to {
-    opacity: 0;
-    transform: translateY(0.9rem) rotate(0.5deg);
-  }
 }
 @keyframes shade-in {
   from {
@@ -425,7 +407,6 @@ select {
   padding: clamp(1rem, 3vw, 2.5rem);
 }
 @media (prefers-reduced-motion: reduce) {
-  .game-dialog[data-phase],
   .game-dialog[data-phase]::backdrop {
     animation-duration: 1ms;
   }
@@ -530,12 +511,14 @@ select {
 }
 
 .dancing-beers {
+  position: relative;
+  width: max-content;
   display: flex;
   align-items: end;
   pointer-events: none;
 }
 .dancing-beers span {
-  width: clamp(2.6rem, 6vw, 5.2rem);
+  width: var(--mug);
 }
 .dancing-beers span:first-child {
   transform: scaleX(-1);
@@ -598,5 +581,84 @@ select {
 @media (max-height: 32rem) {
   .host-content {
     padding-top: 1rem;
+  }
+}
+
+.beer-floor {
+  --mug: clamp(2.6rem, 6vw, 5.2rem);
+  flex: 1;
+  min-width: 0;
+  max-width: 38rem;
+  padding-right: calc(2 * var(--mug));
+  pointer-events: none;
+}
+.beer-track {
+  transform: translateX(var(--step, 0%));
+  transition: transform 2.8s ease-in-out;
+}
+.dancing-beers[data-party='true'] .beer {
+  animation: beer-leap 530ms ease-in-out infinite;
+}
+.dancing-beers[data-party='true'] span:nth-child(2) .beer {
+  animation-delay: -160ms;
+}
+.dancing-beers[data-party='true'] .beer-foot {
+  animation-duration: 170ms;
+}
+@keyframes beer-leap {
+  0%,
+  100% {
+    transform: scale(1.08, 0.89) rotate(6deg);
+  }
+  48% {
+    transform: translateY(-48%) rotate(-18deg) scale(0.97, 1.05);
+  }
+  84% {
+    transform: translateY(-3%) rotate(5deg);
+  }
+}
+.confetti {
+  position: absolute;
+  inset: 0;
+}
+.confetti i {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  width: 5px;
+  height: 8px;
+  background: var(--marker);
+  border: 1px solid var(--ink);
+  opacity: 0;
+  animation: beer-confetti 950ms var(--delay) ease-out both;
+}
+.confetti i:nth-child(even) {
+  background: var(--ink);
+}
+@keyframes beer-confetti {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  8% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--spin));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 1.35), 1rem) rotate(calc(var(--spin) * 1.5));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beer-track {
+    transform: none;
+    transition: none;
+  }
+  .dancing-beers[data-party='true'] .beer,
+  .confetti i {
+    animation: none;
   }
 }

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { onSettled, Show } from 'solid-js';
+import { onSettled } from 'solid-js';
 import { DancingBeers } from '@/components/DancingBeers';
 import { Input } from '@/components/Input';
 import { Join } from '@/components/Join';
@@ -70,9 +70,7 @@ export default function Landing() {
         </div>
         <Scoreboard players={players} removePlayer={removePlayer} />
         <footer class="host-footer">
-          <Show when={players.length === 0}>
-            <DancingBeers />
-          </Show>
+          <DancingBeers winner={winner()} />
           <a href="https://github.com/kasperrt/shottimer" class="source-link">
             GitHub
           </a>

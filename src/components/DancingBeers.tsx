@@ -1,3 +1,7 @@
+import { createEffect, createSignal, For, onSettled, Show } from 'solid-js';
+import { settings } from '@/stores/settings';
+import type { DrawnPlayer } from '@/types/types';
+
 // The handles face outwards so the two glasses can knock rims on the downbeat.
 function Beer() {
   return (
@@ -27,15 +31,59 @@ function Beer() {
   );
 }
 
-export function DancingBeers() {
+function Confetti() {
+  const pieces = Array.from({ length: 24 }, (_, i) => {
+    const angle = (0.13 + Math.random() * 0.74) * Math.PI;
+    const reach = 38 + Math.random() * 55;
+    return {
+      '--dx': `${Math.cos(angle) * reach}px`,
+      '--dy': `${-Math.sin(angle) * reach}px`,
+      '--spin': `${Math.random() * 480 - 240}deg`,
+      '--delay': `${(i % 3) * 700 + Math.random() * 130}ms`,
+    };
+  });
   return (
-    <div class="dancing-beers" aria-hidden="true">
-      <span>
-        <Beer />
-      </span>
-      <span>
-        <Beer />
-      </span>
+    <div class="confetti">
+      <For each={pieces}>{(style) => <i style={style} />}</For>
+    </div>
+  );
+}
+
+export function DancingBeers(props: { winner: DrawnPlayer | null }) {
+  let track!: HTMLDivElement;
+  const [celebration, setCelebration] = createSignal<DrawnPlayer | null>(null);
+  onSettled(() => {
+    const walk = () => track.style.setProperty('--step', `${Math.random() * 100}%`);
+    const interval = setInterval(walk, 3400);
+    walk();
+    return () => clearInterval(interval);
+  });
+
+  createEffect(
+    () => settings.blinkingEnabled() && props.winner,
+    (winner) => {
+      setCelebration(winner || null);
+      if (!winner) return;
+      const timeout = setTimeout(() => setCelebration(null), 3400);
+      return () => clearTimeout(timeout);
+    },
+  );
+
+  return (
+    <div class="beer-floor" aria-hidden="true">
+      <div class="beer-track" ref={track}>
+        <div class="dancing-beers" data-party={celebration() ? 'true' : 'false'}>
+          <span>
+            <Beer />
+          </span>
+          <span>
+            <Beer />
+          </span>
+          <Show keyed when={celebration()}>
+            {(_winner) => <Confetti />}
+          </Show>
+        </div>
+      </div>
     </div>
   );
 }

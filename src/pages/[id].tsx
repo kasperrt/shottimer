@@ -61,14 +61,17 @@ export default function JoinGame() {
           </section>
         }
       >
-        <form class="portrait-form" onSubmit={submit}>
+        <form autocomplete="off" class="portrait-form" onSubmit={submit}>
           <header class="portrait-header">
             <h1>Join the game</h1>
             <label for="player-name">Your name</label>
             <input
               id="player-name"
               name="name"
-              autocomplete="nickname"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck={false}
               required
               value={name()}
               onInput={(e) => setName(e.currentTarget.value)}

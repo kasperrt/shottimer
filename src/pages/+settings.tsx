@@ -50,7 +50,14 @@ export default function SettingsModal() {
       </label>
       <label class="setting-row">
         Intervals (minutes)
-        <input type="number" min="1" onInput={onChangeIntervals} value={intervals() ?? ''} placeholder="Random (1-6)" />
+        <input
+          autocomplete="off"
+          type="number"
+          min="1"
+          onInput={onChangeIntervals}
+          value={intervals() ?? ''}
+          placeholder="Random (1-6)"
+        />
       </label>
     </div>
   );
