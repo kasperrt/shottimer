@@ -14,10 +14,10 @@ async function openRoom(app: Routes) {
     const { value } = await reader.read();
     const data = new TextDecoder().decode(value).match(/^data: (.+)$/m)?.[1];
     if (!data) throw new Error('Missing event data');
-    return JSON.parse(data) as { id: string; name?: string };
+    return JSON.parse(data) as { id: string; hostKey?: string; name?: string };
   };
-  const { id } = await readEvent();
-  return { id, readEvent, close: () => reader.cancel() };
+  const { id, hostKey } = await readEvent();
+  return { id, hostKey, readEvent, close: () => reader.cancel() };
 }
 
 function join(app: Routes, id: string, body = JSON.stringify(guest)) {
@@ -55,6 +55,33 @@ describe('game admissions', () => {
       expect((await join(app, room.id, ' '.repeat(192 * 1024 + 1))).status).toBe(413);
       expect((await join(app, room.id)).status).toBe(204);
       expect((await room.readEvent()).name).toBe('Jo');
+    } finally {
+      await room.close();
+    }
+  });
+
+  it('revokes only with the host key and skips the retired code on reopening', async () => {
+    const codes = ['m5m5m5', 'm5m5m5', 'p6p6p6'];
+    const app = createGameRoutes(() => codes.shift() ?? 'unexpected');
+    const room = await openRoom(app);
+    const revoke = (key: string) =>
+      app.request(`/rtd/${room.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${key}` },
+      });
+    try {
+      expect((await revoke(room.id)).status).toBe(404);
+      expect((await join(app, room.id)).status).toBe(204);
+      await room.readEvent();
+      expect((await revoke(room.hostKey ?? '')).status).toBe(204);
+      expect((await join(app, room.id)).status).toBe(404);
+      const reopened = await openRoom(app);
+      try {
+        expect(reopened.id).toBe('p6p6p6');
+        expect((await join(app, reopened.id)).status).toBe(204);
+      } finally {
+        await reopened.close();
+      }
     } finally {
       await room.close();
     }

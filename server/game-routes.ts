@@ -5,6 +5,7 @@ import { maxRemotePlayers, simplePlayerSchema } from '../src/types/types.js';
 import { type GameEnv, peer, readPlayer } from './admission.js';
 
 interface Room {
+  hostKey: string;
   stream: SSEStreamingApi;
   players: Set<string>;
   pending: number;
@@ -57,6 +58,8 @@ export function createGameRoutes(
   } = {},
 ) {
   const rooms = new Map<string, Room>();
+  // Avoid handing a recently closed invite straight back to a different session.
+  const recentCodes = new Set<string>();
   const active = new Map<string, number>();
   const starts = new MinuteBudget(240, 60);
   const joins = new MinuteBudget(1200, 300);
@@ -80,7 +83,12 @@ export function createGameRoutes(
     const count = active.get(key) ?? 0;
     if (rooms.size >= 256 || count >= roomsPerPeer || !starts.take(key)) return throttled(ctx);
     let id = newInvite();
-    while (rooms.has(id)) id = newInvite();
+    while (rooms.has(id) || recentCodes.has(id)) id = newInvite();
+    recentCodes.add(id);
+    if (recentCodes.size > 256) {
+      const oldest = recentCodes.values().next();
+      if (!oldest.done) recentCodes.delete(oldest.value);
+    }
     return streamSSE(ctx, async (stream) => {
       const closed = new AbortController();
       const disconnected = new Promise<void>((resolve) => stream.onAbort(resolve));
@@ -99,11 +107,22 @@ export function createGameRoutes(
         closed.abort();
         void send('expired', 'null').finally(() => stream.abort());
       }, idleMs);
-      const room = { stream, players: new Set<string>(), pending: 0, closed, touch: () => idle.refresh(), send };
+      const room = {
+        hostKey: nanoid(),
+        stream,
+        players: new Set<string>(),
+        pending: 0,
+        closed,
+        touch: () => idle.refresh(),
+        send,
+      };
       active.set(key, count + 1);
       rooms.set(id, room);
       const heartbeat = setInterval(() => void send('ping', 'keepalive'), 30_000);
+      const requestSignal = ctx.req.raw.signal;
+      const disconnect = () => stream.abort();
       stream.onAbort(() => {
+        requestSignal.removeEventListener('abort', disconnect);
         closed.abort();
         clearTimeout(idle);
         clearInterval(heartbeat);
@@ -112,9 +131,21 @@ export function createGameRoutes(
         if (remaining) active.set(key, remaining);
         else active.delete(key);
       });
-      await send('join', JSON.stringify({ id }));
+      requestSignal.addEventListener('abort', disconnect, { once: true });
+      if (requestSignal.aborted) disconnect();
+      await send('join', JSON.stringify({ id, hostKey: room.hostKey }));
       await disconnected;
     });
+  });
+
+  routes.delete('/rtd/:id', (ctx) => {
+    const room = rooms.get(ctx.req.param('id').toLowerCase());
+    if (!room || ctx.req.header('Authorization') !== `Bearer ${room.hostKey}`) {
+      if (!invalidRemovals.take(peer(ctx, trustIngress))) return throttled(ctx);
+      return ctx.text('Unknown invite.', 404);
+    }
+    room.stream.abort();
+    return ctx.body(null, 204);
   });
 
   routes.post(

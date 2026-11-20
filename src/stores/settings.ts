@@ -2,6 +2,7 @@ import { createRoot, createSignal } from 'solid-js';
 import type { GameType } from '../types/types';
 
 function createSettings() {
+  const [remoteJoin, setRemoteJoin] = createSignal(true);
   const [soundEnabled, setSoundEnabled] = createSignal(true);
   const [scoreEnabled, setScoreEnabled] = createSignal(true);
   const [timerEnabled, setTimerEnabled] = createSignal(true);
@@ -10,6 +11,8 @@ function createSettings() {
   const [gameType, setGameType] = createSignal<GameType>('ANARCHY');
 
   return {
+    remoteJoin,
+    setRemoteJoin,
     soundEnabled,
     scoreEnabled,
     timerEnabled,

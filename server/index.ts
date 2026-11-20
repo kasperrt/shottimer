@@ -62,6 +62,8 @@ app.use(
   }),
 );
 
+app.use('/rtd/*', cors({ origin: CORS }));
+
 app.use(
   '/rtd',
   cors({
