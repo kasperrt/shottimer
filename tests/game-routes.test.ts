@@ -46,7 +46,7 @@ describe('game admissions', () => {
     expect((await join(app, 'missing', 'invalid')).status).toBe(404);
     const room = await openRoom(app);
     try {
-      expect(room.id).toMatch(/^[\w-]{21}$/);
+      expect(room.id).toMatch(/^[a-z2-9]{6}$/);
       expect((await join(app, room.id, 'invalid')).status).toBe(400);
       const path = `/join/${room.id}`;
       expect(
@@ -73,7 +73,7 @@ describe('game admissions', () => {
       expect([first.id, second.id]).toEqual(['first', 'second']);
       await first.close();
       expect((await join(app, first.id)).status).toBe(404);
-      expect((await join(app, second.id)).status).toBe(204);
+      expect((await join(app, second.id.toUpperCase())).status).toBe(204);
       expect((await second.readEvent()).name).toBe('Jo');
     } finally {
       await second.close();

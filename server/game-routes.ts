@@ -1,6 +1,6 @@
 import { type Context, Hono } from 'hono';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
-import { nanoid } from 'nanoid';
+import { customAlphabet, nanoid } from 'nanoid';
 import { maxRemotePlayers, simplePlayerSchema } from '../src/types/types.js';
 import { type GameEnv, peer, readPlayer } from './admission.js';
 
@@ -44,8 +44,10 @@ function throttled(ctx: Context) {
   return ctx.text('Please try again in a minute.', 429);
 }
 
+const createRoomCode = customAlphabet('bcdfghjkmnpqrstvwxyz23456789', 6);
+
 export function createGameRoutes(
-  newInvite: () => string = nanoid,
+  newInvite: () => string = createRoomCode,
   {
     trustIngress = false,
     roomsPerPeer = 8,
@@ -120,7 +122,7 @@ export function createGameRoutes(
     async (ctx, next) => {
       const key = peer(ctx, trustIngress);
       if (!joins.take(key)) return throttled(ctx);
-      const id = ctx.req.param('id');
+      const id = ctx.req.param('id').toLowerCase();
       const room = rooms.get(id);
       if (!room || room.closed.signal.aborted || room.stream.aborted) return ctx.text('Game closed.', 404);
       if (!roomRequests.take(id)) return throttled(ctx);
@@ -147,7 +149,7 @@ export function createGameRoutes(
       if (!('input' in body)) return body;
       const parsed = simplePlayerSchema.safeParse(body.input);
       if (!parsed.success) return ctx.text('Invalid player or portrait.', 400);
-      if (room.closed.signal.aborted || room.stream.aborted || rooms.get(ctx.req.param('id')) !== room)
+      if (room.closed.signal.aborted || room.stream.aborted || rooms.get(ctx.req.param('id').toLowerCase()) !== room)
         return ctx.text('Game closed.', 404);
       if (room.players.size >= maxRemotePlayers) return ctx.text('Game full.', 409);
       const player = { ...parsed.data, id: nanoid(), joined: Date.now(), score: 0 };
@@ -166,7 +168,7 @@ export function createGameRoutes(
   );
 
   routes.delete('/join/:id', (ctx) => {
-    const id = ctx.req.param('id');
+    const id = ctx.req.param('id').toLowerCase();
     const room = rooms.get(id);
     const credential = ctx.req.header('Authorization') ?? '';
     const playerId = credential.slice(7);
