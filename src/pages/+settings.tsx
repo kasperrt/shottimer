@@ -1,8 +1,9 @@
 import { Toggle } from '@/components/Toggle';
 import { settings } from '@/stores/settings';
 
-export default function SettingsModal() {
+export default function SettingsModal(props: { toggleRemoteJoin: () => void; changingRemoteJoin: boolean }) {
   const {
+    remoteJoin,
     soundEnabled,
     scoreEnabled,
     intervals,
@@ -30,6 +31,12 @@ export default function SettingsModal() {
 
   return (
     <div class="settings-list">
+      <Toggle
+        label="Remote join"
+        checked={remoteJoin()}
+        disabled={props.changingRemoteJoin}
+        onChange={props.toggleRemoteJoin}
+      />
       <Toggle label="Sound" checked={soundEnabled()} onChange={() => setSoundEnabled(!soundEnabled())} />
       <Toggle label="Show scores" checked={scoreEnabled()} onChange={() => setScoreEnabled(!scoreEnabled())} />
       <Toggle

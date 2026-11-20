@@ -1,5 +1,6 @@
 interface Props {
   checked: boolean;
+  disabled?: boolean;
   label: string;
   onChange: () => void;
 }
@@ -14,6 +15,7 @@ export function Toggle(props: Props) {
           aria-label={props.label}
           type="checkbox"
           checked={props.checked}
+          disabled={props.disabled}
           onChange={() => props.onChange()}
         />
         <span aria-hidden="true" class="switch-face">

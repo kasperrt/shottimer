@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from '@solidjs/router';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createSignal, onCleanup, Show } from 'solid-js';
 import { getHttpError } from 'wiretyped';
 import { DancingBeers } from '@/components/DancingBeers';
 import { Input } from '@/components/Input';
@@ -9,6 +9,7 @@ import { Scoreboard } from '@/components/Scoreboard';
 import { Timer } from '@/components/Timer';
 import { httpClient } from '@/lib/http';
 import { useGame } from '@/stores/game';
+import { settings } from '@/stores/settings';
 import { type DrawnPlayer, maxLocalPlayers } from '@/types/types';
 import Rules from './+rules';
 import Settings from './+settings';
@@ -19,6 +20,31 @@ export default function Landing() {
   const open = (modal: string) => navigate(location.pathname, { state: { modal } });
   const close = () => navigate(location.pathname, { replace: true, state: {} });
   const { gameId, setGameId, countdown, winner, players, addPlayer, removePlayer } = useGame();
+  let hostRoom: { id: string; hostKey: string } | undefined;
+  const [changingRemoteJoin, setChangingRemoteJoin] = createSignal(false);
+  async function toggleRemoteJoin() {
+    if (changingRemoteJoin()) return;
+    if (settings.remoteJoin() && hostRoom) {
+      setChangingRemoteJoin(true);
+      try {
+        const [error] = await httpClient.delete(
+          '/rtd/{id}',
+          { id: hostRoom.id },
+          {
+            headers: { Authorization: `Bearer ${hostRoom.hostKey}` },
+            signal: removal.signal,
+          },
+        );
+        if (error && getHttpError(error)?.response.status !== 404) {
+          if (!removal.signal.aborted) window.alert('Could not close the invite. Please try again.');
+          return;
+        }
+      } finally {
+        setChangingRemoteJoin(false);
+      }
+    }
+    settings.setRemoteJoin(!settings.remoteJoin());
+  }
   const removal = new AbortController();
   onCleanup(() => removal.abort());
   async function leave(id: string) {
@@ -51,52 +77,60 @@ export default function Landing() {
   });
   const [inviteSession, reopen] = createSignal(0);
   const [expired, setExpired] = createSignal(false);
-  createEffect(inviteSession, () => {
-    setExpired(false);
-    const connection = new AbortController();
-    let disposed = false;
-    let closer: VoidFunction | undefined;
-    void httpClient
-      .sse(
-        '/rtd',
-        null,
-        ([err, event]) => {
-          if (disposed) return;
-          if (err) {
-            setGameId(null);
-            return;
-          }
+  createEffect(
+    () => (settings.remoteJoin() ? inviteSession() : null),
+    (session) => {
+      setGameId(null);
+      setExpired(false);
+      if (session === null) return;
+      const connection = new AbortController();
+      let disposed = false;
+      let closer: VoidFunction | undefined;
+      void httpClient
+        .sse(
+          '/rtd',
+          null,
+          ([err, event]) => {
+            if (disposed) return;
+            if (err) {
+              setGameId(null);
+              return;
+            }
 
-          if (event.type === 'expired') {
-            connection.abort();
-            setGameId(null);
-            setExpired(true);
-            return;
-          }
+            if (event.type === 'expired') {
+              hostRoom = undefined;
+              connection.abort();
+              setGameId(null);
+              setExpired(true);
+              return;
+            }
 
-          if (event.type === 'join') {
-            setGameId(event.data.id);
-            return;
-          }
+            if (event.type === 'join') {
+              hostRoom = event.data;
+              setGameId(event.data.id);
+              return;
+            }
 
-          if (event.type === 'player') {
-            addPlayer(event.data);
-          }
-        },
-        { signal: connection.signal, errorConnect: true },
-      )
-      .then(([error, close]) => {
-        if (error) {
-          if (!disposed) window.alert('Something went wrong when opening connection');
-        } else if (disposed) close();
-        else closer = close;
-      });
-    return () => {
-      disposed = true;
-      connection.abort();
-      closer?.();
-    };
-  });
+            if (event.type === 'player') {
+              addPlayer(event.data);
+            }
+          },
+          { signal: connection.signal, errorConnect: true },
+        )
+        .then(([error, close]) => {
+          if (error) {
+            if (!disposed) window.alert('Something went wrong when opening connection');
+          } else if (disposed) close();
+          else closer = close;
+        });
+      return () => {
+        hostRoom = undefined;
+        disposed = true;
+        connection.abort();
+        closer?.();
+      };
+    },
+  );
 
   return (
     <>
@@ -115,13 +149,15 @@ export default function Landing() {
         </div>
         <div class="host-content">
           <Timer winner={announcing()} countdown={countdown()} />
-          {expired() ? (
-            <button type="button" class="join-link" onClick={() => reopen((session) => session + 1)}>
-              Reopen player invites
-            </button>
-          ) : (
-            <Join gameId={gameId()} />
-          )}
+          <Show when={settings.remoteJoin()}>
+            {expired() ? (
+              <button type="button" class="join-link" onClick={() => reopen((session) => session + 1)}>
+                Reopen player invites
+              </button>
+            ) : (
+              <Join gameId={gameId()} />
+            )}
+          </Show>
           <Input addPlayer={addPlayer} full={players.filter((player) => !player.drawing).length >= maxLocalPlayers} />
         </div>
         <Scoreboard players={players} removePlayer={leave} />
@@ -137,7 +173,7 @@ export default function Landing() {
         </footer>
       </div>
       <Modal title="Settings" open={location.state?.modal === '/settings'} onClose={close}>
-        <Settings />
+        <Settings toggleRemoteJoin={toggleRemoteJoin} changingRemoteJoin={changingRemoteJoin()} />
       </Modal>
       <Modal title="Rules" open={location.state?.modal === '/rules'} onClose={close}>
         <Rules />

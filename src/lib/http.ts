@@ -10,10 +10,11 @@ const endpoints = {
       request: simplePlayerSchema,
     },
   },
+  '/rtd/{id}': { delete: { response: z.null() } },
   '/rtd': {
     sse: {
       events: {
-        join: z.object({ id: z.string() }),
+        join: z.object({ id: z.string(), hostKey: z.string() }),
         player: playerSchema,
         expired: z.null(),
       },
